@@ -58,7 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'pbp_foodprint.urls'
+ROOT_URLCONF = 'foodprint.urls'
 
 TEMPLATES = [
     {
@@ -75,7 +75,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'pbp_foodprint.wsgi.application'
+WSGI_APPLICATION = 'foodprint.wsgi.application'
 
 
 # Database
