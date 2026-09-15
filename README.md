@@ -1,7 +1,7 @@
 # FoodPrint
 > **Food waste management and reporting system.**
 
-[![PWS Deployment](https://img.shields.io/badge/Deployment-PWS-brightgreen)](https://pws.cs.ui.ac.id/delitha.theodora/foodprint)
+[![PWS Deployment](https://img.shields.io/badge/Deployment-PWS-brightgreen)](https://delitha-theodora-foodprint.pws.cs.ui.ac.id)
 [![Figma](https://img.shields.io/badge/Design-Figma-blue)](https://www.figma.com/design/f8Vx2fLgcxBzXWKOyIyuoI/Untitled?node-id=0-1&t=2jf5NFOxM8IgMFHQ-1)
 
 ## Overview
