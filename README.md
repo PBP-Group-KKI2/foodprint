@@ -13,6 +13,45 @@ This application can potentially **raise awareness** for citizens around the wor
 
 ---
 
+## How to Run Locally
+
+If you want to run this project on your own laptop, follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/PBP-Group-KKI2/foodprint.git
+   cd foodprint
+   ```
+
+2. **Create and activate a virtual environment:**
+   ```bash
+   # Create the environment
+   python -m venv env
+   
+   # Activate on macOS/Linux:
+   source env/bin/activate
+   # Activate on Windows:
+   env\Scripts\activate
+   ```
+
+3. **Install the required dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Apply database migrations:**
+   ```bash
+   python manage.py migrate
+   ```
+
+5. **Run the development server:**
+   ```bash
+   python manage.py runserver
+   ```
+   *Open your browser and navigate to `http://localhost:8000/` to view the app.*
+
+---
+
 ## Project Details
 
 ### What?
@@ -49,9 +88,17 @@ Hopefully, if this ambitious project goes well, it should be ready and open to t
 
 | Name | Student ID | Assigned Module |
 | :--- | :--- | :--- |
-| **Muhammad Arsyad Avmeilputra** | 2506556246 | *(Update module here)* |
-| **Dihya Fauzan Haryadi** | 2506637003 | *(Update module here)* |
-| **Kenaz Shidqi Baswara** | 2506558144 | *(Update module here)* |
-| **Delitha Theodora** | 2506553585 | *(Update module here)* |
-| **Goran Adriano Tamrella** | 2506558251 | *(Update module here)* |
-| **Sorush Baghertash** | 2606816434 | *(Update module here)* |
+| **Muhammad Arsyad Avmeilputra** | 2506556246 | Analytics & Dashboards |
+| **Dihya Fauzan Haryadi** | 2506637003 | Profile |
+| **Kenaz Shidqi Baswara** | 2506558144 | Reward System |
+| **Delitha Theodora** | 2506553585 | Educational Hub |
+| **Goran Adriano Tamrella** | 2506558251 | Reporting & Mapping |
+| **Sorush Baghertash** | 2606816434 | Task Dispatch System |
+
+### Module Details
+*   **Reporting & Mapping:** CRUD on waste reports. Integrates the OpenStreetMap API to pin waste locations. Uses AJAX to submit reports without reloading the map.
+*   **Profile:** CRUD on user profiles. Handles authentication-based filtering to ensure officials, citizens, and organizations see appropriate dashboards.
+*   **Task Dispatch System:** CRUD on collection tasks. Allows waste management officials to claim, update, and close pending reports.
+*   **Educational Hub:** CRUD on waste categorization guides. Allows admins to post articles and users to filter public API/mock API data on global waste statistics.
+*   **Analytics & Dashboards:** CRUD on saved datasets or tracked metrics for environmental organizations. Uses HTMX/AJAX for dynamic chart updates.
+*   **Reward System:** CRUD on reward claims and discount coupons. Allows users to redeem points for local restaurant and store vouchers using AJAX for instant balance updates.
