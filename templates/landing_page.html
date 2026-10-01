@@ -1,0 +1,383 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodPrint — Report food waste near you</title>
+  <meta name="description" content="Report food waste in your area and help officials act on it.">
+  <link rel="icon" href="{% static 'images/favicon.png' %}">
+
+  {# Font #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  {# Stylesheet #}
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body class="page--landing">
+
+  {# On the landing page, body has class "page--landing" so the navbar floats transparent over the hero #}
+  <header class="navbar">
+    <div class="navbar__inner">
+
+      <a href="{% url 'main:landing' %}" class="navbar__brand">
+        <span class="navbar__logo" aria-hidden="true">
+          <img src="{% static 'images/logo.svg' %}" alt="">
+        </span>
+        <span class="navbar__name">FoodPrint</span>
+      </a>
+
+      <nav class="navbar__nav" aria-label="Main">
+        <ul class="navbar__links">
+          {# Replace "#" with {% url '...' %} once each module's URLs exist #}
+          <li><a href="{% url 'main:landing' %}" class="navbar__link navbar__link--active">Home</a></li>
+          <li><a href="#" class="navbar__link">Map</a></li>
+          <li><a href="#" class="navbar__link">Learn</a></li>
+          <li><a href="#" class="navbar__link">Rewards</a></li>
+          <li><a href="#" class="navbar__link">Dashboard</a></li>
+        </ul>
+      </nav>
+
+      <div class="navbar__actions">
+        {% if user.is_authenticated %}
+          <a href="#" class="btn btn--outline navbar__cta">Report waste</a>
+          <a href="#" class="navbar__profile">{{ user.username|slice:":1"|upper }}</a>
+        {% else %}
+          <a href="#" class="btn btn--outline navbar__cta">Log in</a>
+        {% endif %}
+
+        <button type="button" class="navbar__menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+          <span class="navbar__menu-icon"></span>
+        </button>
+      </div>
+
+    </div>
+
+    {# Mobile menu, hidden by default, toggled with JS at the bottom of this file #}
+    <nav id="mobile-menu" class="navbar__mobile" aria-label="Mobile" hidden>
+      <ul class="navbar__mobile-links">
+        <li><a href="{% url 'main:landing' %}">Home</a></li>
+        <li><a href="#">Map</a></li>
+        <li><a href="#">Learn</a></li>
+        <li><a href="#">Rewards</a></li>
+        <li><a href="#">Dashboard</a></li>
+        {% if user.is_authenticated %}
+          <li><a href="#">Report waste</a></li>
+        {% else %}
+          <li><a href="#">Log in</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
+
+    {# ============================================================ #}
+    {# HERO — full-bleed background photo, navbar overlays this      #}
+    {# ============================================================ #}
+    <section class="hero">
+      <div class="hero__media" aria-hidden="true">
+        <img src="{% static 'images/hero.jpg' %}" alt="" class="hero__bg">
+        <div class="hero__overlay"></div>
+      </div>
+
+      <div class="hero__content">
+        <h1 class="hero__title">
+          See Food Waste,<br>
+          Help Clear It Up
+        </h1>
+
+        <div class="hero__bottom">
+          <p class="hero__lead">
+            Pin food waste you find around you. Every report goes to officials
+            and organizations who can act on it.
+          </p>
+          <a href="#" class="btn btn--light hero__cta">
+            <span>Report waste</span>
+            <span class="btn__icon" aria-hidden="true"></span>
+          </a>
+        </div>
+      </div>
+
+      <a href="#mission" class="hero__scroll">
+        <span class="hero__scroll-icon" aria-hidden="true"></span>
+        <span>Scroll down</span>
+      </a>
+    </section>
+
+
+    {# ============================================================ #}
+    {# MISSION — centered statement + three feature cards           #}
+    {# ============================================================ #}
+    <section id="mission" class="section mission">
+      <div class="container">
+
+        <p class="section-label">Our mission</p>
+
+        <h2 class="mission__statement">
+          Turn everyday sightings of food waste into reports
+          <span class="mission__inline-img" aria-hidden="true">
+            <img src="{% static 'images/inline-pill.jpg' %}" alt="">
+          </span>
+          that officials can act on,
+          <span class="mission__statement--muted">
+            and help citizens learn how to sort and reduce waste.
+          </span>
+        </h2>
+
+        <div class="mission__cards">
+
+          {# Card 1 — stat card (light background) #}
+          <article class="card card--stat">
+            <h3 class="card__title">Every report counts</h3>
+            <div class="card__stat">
+              {# Later: replace with a real count from the database, e.g. {{ report_count }} #}
+              <span class="card__number">0</span>
+              <p class="card__caption">Waste reports filed by the community so far.</p>
+            </div>
+          </article>
+
+          {# Card 2 — image card with text over photo #}
+          <article class="card card--image">
+            <img src="{% static 'images/card-vision.jpg' %}" alt="" class="card__bg">
+            <span class="card__icon" aria-hidden="true">
+              <img src="{% static 'images/icons/eye.svg' %}" alt="">
+            </span>
+            <div class="card__body">
+              <h3 class="card__title">Vision</h3>
+              <p class="card__text">
+                Cities where food waste is spotted early, reported quickly,
+                and collected before it reaches a landfill.
+              </p>
+            </div>
+          </article>
+
+          {# Card 3 — accent card (solid brand color) #}
+          <article class="card card--accent">
+            <div class="card__header">
+              <span class="card__meta">Spot, report, resolve</span>
+              <span class="card__icon" aria-hidden="true">
+                <img src="{% static 'images/icons/leaf.svg' %}" alt="">
+              </span>
+            </div>
+            <h3 class="card__title">A cleaner city, built together</h3>
+            <div class="card__footer">
+              <div class="card__avatars" aria-hidden="true">
+                <span class="card__avatar"><img src="{% static 'images/avatar-1.jpg' %}" alt=""></span>
+                <span class="card__avatar"><img src="{% static 'images/avatar-2.jpg' %}" alt=""></span>
+              </div>
+              <p class="card__caption">For citizens, officials, and organizations.</p>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+
+    {# ============================================================ #}
+    {# ABOUT — tags on the left, heading + text on the right         #}
+    {# ============================================================ #}
+    <section id="about" class="section about">
+      <div class="container about__grid">
+
+        <div class="about__left">
+          <p class="section-label">About</p>
+          <ul class="tag-list">
+            <li class="tag">Waste reporting</li>
+            <li class="tag">Live map</li>
+            <li class="tag">Waste education</li>
+            <li class="tag">Task dispatch</li>
+            <li class="tag">Rewards</li>
+            <li class="tag">Open data</li>
+          </ul>
+        </div>
+
+        <div class="about__right">
+          <h2 class="section-title">Rooted in the Community</h2>
+          <p class="about__text">
+            FoodPrint is a food waste reporting system and data provider. Citizens
+            report waste they find, the reports are stored and mapped, and
+            environmental companies, organizations, and local governments use that
+            data to decide where to act.
+          </p>
+          <a href="#how-it-works" class="btn btn--primary">See how it works</a>
+        </div>
+
+      </div>
+    </section>
+
+
+    {# ============================================================ #}
+    {# HOW IT WORKS — 3 real sequential steps                        #}
+    {# ============================================================ #}
+    <section id="how-it-works" class="section steps">
+      <div class="container">
+        <p class="section-label">How it works</p>
+        <h2 class="section-title">From sighting to cleanup</h2>
+
+        <ol class="steps__list">
+          <li class="step">
+            <span class="step__icon" aria-hidden="true">
+              <img src="{% static 'images/icons/eye.svg' %}" alt="">
+            </span>
+            <h3 class="step__title">Spot it</h3>
+            <p class="step__text">Find food waste in your neighborhood, campus, or market.</p>
+          </li>
+          <li class="step">
+            <span class="step__icon" aria-hidden="true">
+              <img src="{% static 'images/icons/pin.svg' %}" alt="">
+            </span>
+            <h3 class="step__title">Report it</h3>
+            <p class="step__text">Pin the location on the map, pick the waste category, and add a photo.</p>
+          </li>
+          <li class="step">
+            <span class="step__icon" aria-hidden="true">
+              <img src="{% static 'images/icons/truck.svg' %}" alt="">
+            </span>
+            <h3 class="step__title">Officials act</h3>
+            <p class="step__text">Waste officials claim the report, collect the waste, and close the task.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+
+    {# ============================================================ #}
+    {# FEATURES — one card per module                                #}
+    {# ============================================================ #}
+    <section id="features" class="section features">
+      <div class="container">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Everything in one place</h2>
+
+        <div class="features__grid">
+
+          <a href="#" class="feature-card">
+            <div class="feature-card__media"><img src="{% static 'images/feature-report.jpg' %}" alt=""></div>
+            <h3 class="feature-card__title">Reporting &amp; Mapping</h3>
+            <p class="feature-card__text">File waste reports and see them pinned on a live map.</p>
+          </a>
+
+          <a href="#" class="feature-card">
+            <div class="feature-card__media"><img src="{% static 'images/feature-learn.jpg' %}" alt=""></div>
+            <h3 class="feature-card__title">Educational Hub</h3>
+            <p class="feature-card__text">Learn how to tell food waste types apart and sort them.</p>
+            <span class="badge">Coming soon</span>
+          </a>
+
+          <a href="#" class="feature-card">
+            <div class="feature-card__media"><img src="{% static 'images/feature-dispatch.jpg' %}" alt=""></div>
+            <h3 class="feature-card__title">Task Dispatch</h3>
+            <p class="feature-card__text">Officials claim, update, and close pending reports.</p>
+            <span class="badge">Coming soon</span>
+          </a>
+
+          <a href="#" class="feature-card">
+            <div class="feature-card__media"><img src="{% static 'images/feature-dashboard.jpg' %}" alt=""></div>
+            <h3 class="feature-card__title">Analytics &amp; Dashboards</h3>
+            <p class="feature-card__text">Explore waste data and trends for planning and campaigns.</p>
+            <span class="badge">Coming soon</span>
+          </a>
+
+          <a href="#" class="feature-card">
+            <div class="feature-card__media"><img src="{% static 'images/feature-rewards.jpg' %}" alt=""></div>
+            <h3 class="feature-card__title">Rewards</h3>
+            <p class="feature-card__text">Earn points for reports and redeem them at local restaurants.</p>
+            <span class="badge">Coming soon</span>
+          </a>
+
+          <a href="#" class="feature-card">
+            <div class="feature-card__media"><img src="{% static 'images/feature-profile.jpg' %}" alt=""></div>
+            <h3 class="feature-card__title">Profiles</h3>
+            <p class="feature-card__text">Citizens, officials, and organizations each get their own view.</p>
+            <span class="badge">Coming soon</span>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+
+    {# ============================================================ #}
+    {# CTA BAND — closing call to action                             #}
+    {# ============================================================ #}
+    <section class="cta-band">
+      <div class="container cta-band__inner">
+        <h2 class="cta-band__title">Seen food waste today?</h2>
+        <p class="cta-band__text">It takes less than a minute to report it.</p>
+        <a href="#" class="btn btn--light">Report waste</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+
+      <div class="footer__brand">
+        <a href="{% url 'main:landing' %}" class="footer__logo-link">
+          <span class="navbar__logo" aria-hidden="true">
+            <img src="{% static 'images/logo.svg' %}" alt="">
+          </span>
+          <span>FoodPrint</span>
+        </a>
+        <p class="footer__tagline">Food waste reporting for cleaner cities.</p>
+      </div>
+
+      <nav class="footer__nav" aria-label="Footer">
+        <div class="footer__col">
+          <h3 class="footer__heading">Explore</h3>
+          <ul>
+            <li><a href="#">Report waste</a></li>
+            <li><a href="#">Waste map</a></li>
+            <li><a href="#">Learn</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h3 class="footer__heading">For partners</h3>
+          <ul>
+            <li><a href="#">Task dispatch</a></li>
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Rewards</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h3 class="footer__heading">Project</h3>
+          <ul>
+            <li><a href="https://github.com/PBP-Group-KKI2/foodprint" target="_blank" rel="noopener">GitHub</a></li>
+          </ul>
+        </div>
+      </nav>
+
+    </div>
+
+    <div class="container footer__bottom">
+      <p>&copy; 2026 FoodPrint &middot; PBP Group 2, Fasilkom UI</p>
+    </div>
+  </footer>
+
+  {# Hide images that fail to load so placeholder fills show instead of broken-image icons #}
+  <script>
+    document.querySelectorAll('img').forEach((img) => {
+      const hide = () => { img.style.visibility = 'hidden'; };
+      if (img.complete && img.naturalWidth === 0) hide();
+      img.addEventListener('error', hide);
+    });
+  </script>
+
+  {# Mobile menu toggle #}
+  <script>
+    const menuToggle = document.querySelector('.navbar__menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (menuToggle && mobileMenu) {
+      menuToggle.addEventListener('click', () => {
+        const open = menuToggle.getAttribute('aria-expanded') === 'true';
+        menuToggle.setAttribute('aria-expanded', String(!open));
+        mobileMenu.hidden = open;
+      });
+    }
+  </script>
+</body>
+</html>
