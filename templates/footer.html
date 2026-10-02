@@ -1,0 +1,46 @@
+{% load static %}
+{# Shared footer, included by base.html. Replace "#" with {% url '...' %} once each module's URLs exist. #}
+<footer class="footer">
+  <div class="container footer__inner">
+
+    <div class="footer__brand">
+      <a href="{% url 'main:landing' %}" class="footer__logo-link">
+        <span class="navbar__logo" aria-hidden="true">
+          <img src="{% static 'images/logo.svg' %}" alt="">
+        </span>
+        <span>FoodPrint</span>
+      </a>
+      <p class="footer__tagline">Food waste reporting for cleaner cities.</p>
+    </div>
+
+    <nav class="footer__nav" aria-label="Footer">
+      <div class="footer__col">
+        <h3 class="footer__heading">Explore</h3>
+        <ul>
+          <li><a href="#">Report waste</a></li>
+          <li><a href="#">Waste map</a></li>
+          <li><a href="#">Learn</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h3 class="footer__heading">For partners</h3>
+        <ul>
+          <li><a href="#">Task dispatch</a></li>
+          <li><a href="#">Dashboard</a></li>
+          <li><a href="#">Rewards</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h3 class="footer__heading">Project</h3>
+        <ul>
+          <li><a href="https://github.com/PBP-Group-KKI2/foodprint" target="_blank" rel="noopener">GitHub</a></li>
+        </ul>
+      </div>
+    </nav>
+
+  </div>
+
+  <div class="container footer__bottom">
+    <p>&copy; 2026 FoodPrint &middot; PBP Group 2, Fasilkom UI</p>
+  </div>
+</footer>
