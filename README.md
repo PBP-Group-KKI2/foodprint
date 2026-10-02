@@ -2,7 +2,7 @@
 > **Food waste management and reporting system.**
 
 [![PWS Deployment](https://img.shields.io/badge/Deployment-PWS-brightgreen)](https://delitha-theodora-foodprint.pws.cs.ui.ac.id)
-[![Figma](https://img.shields.io/badge/Design-Figma-blue)](https://www.figma.com/design/f8Vx2fLgcxBzXWKOyIyuoI/Untitled?node-id=0-1&t=2jf5NFOxM8IgMFHQ-1)
+[![Figma](https://img.shields.io/badge/Design-Figma-blue)](https://www.figma.com/team_invite/redeem/4mWYTeQNVAav7i6Kni2KAR?t=dQSfq884zqX7j4vq-21)
 
 ## Overview
 Have you ever walked past overflowing bins and discarded food? You’d think there’s nothing you can do about it and would just leave it to the officials. The problem is, people are not perfect. Officials can be unaware of the existence of that waste. So, how can you help? Well, you have a chance to contribute to the environment through **FoodPrint**!

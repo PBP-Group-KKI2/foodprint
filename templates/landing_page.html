@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FoodPrint — Report food waste near you</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta name="description" content="Report food waste in your area and help officials act on it.">
   <link rel="icon" href="{% static 'images/favicon.png' %}">
 
@@ -12,6 +13,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Condensed:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
 
   {# Stylesheet #}
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
@@ -79,7 +83,7 @@
     {# ============================================================ #}
     <section class="hero">
       <div class="hero__media" aria-hidden="true">
-        <img src="{% static 'images/hero.jpg' %}" alt="" class="hero__bg">
+        <img src="{% static 'img/hero.jpg' %}" alt="" class="hero__bg">
         <div class="hero__overlay"></div>
       </div>
 
@@ -95,7 +99,7 @@
             and organizations who can act on it.
           </p>
           <a href="#" class="btn btn--light hero__cta">
-            <span>Report waste</span>
+            <span>Contribute now!</span>
             <span class="btn__icon" aria-hidden="true"></span>
           </a>
         </div>
@@ -107,6 +111,59 @@
       </a>
     </section>
 
+    {# ============================================================ #}
+    {# PROBLEM_STATEMENT                                            #}
+    {# ============================================================ #}
+
+    <section id="problem-statement" class="section problem-statement">
+      <div class="container problem-content">
+        <div class="problem-texts">
+          <p class="section-label">Problem</p>
+          <h2 class="section-title">What does the world face?</h2>
+          <p class="problem-paragraph">While headlines often focus on plastic pollution, the data reveals a much larger 
+            hidden crisis: food waste is actually the single largest contributor to our landfills. 
+            Currently, food waste accounts for a staggering 40% of all municipal waste—double the 
+            volume of plastic. This means the biggest strain on our waste management systems, and 
+            the largest source of landfill methane emissions, comes directly from our kitchens and 
+            local services. We don't just have a trash problem; we have a food problem, and changing 
+            how we handle organic waste is the most impactful step we can take.</p>
+        </div>
+          <div class="chart-container">
+              <canvas id="wasteChart"></canvas>
+          </div>
+      </div>
+    </section>
+
+    {{ chart_data|json_script:"my-chart-data" }}
+
+    <script>
+      const rawData = JSON.parse(document.getElementById('my-chart-data').textContent);
+      
+      const ctx = document.getElementById('wasteChart').getContext('2d')
+      const wasteChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: rawData.labels,
+          datasets: [{
+            label: '% of Global Food Waste',
+            data: rawData.values,
+            backgroundColor: rawData.colors,
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+            }
+          },
+          cutout: '65%'
+        }
+      })
+
+    </script>
 
     {# ============================================================ #}
     {# MISSION — centered statement + three feature cards           #}
