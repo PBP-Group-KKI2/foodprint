@@ -16,8 +16,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from main.views import (
+    show_landing,
+    register,
+    login_user,
+    logout_user,
+)
+
+app_name = "landing_page"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+<<<<<<< HEAD
     path('', include('main.urls')),
 ]
+=======
+    path("", include("main.urls")),
+    path('', show_landing, name='landing'),
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
+]
+>>>>>>> b56c1f0 (feat: authorization on landing_page,views,and urls)
