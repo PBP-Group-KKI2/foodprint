@@ -13,3 +13,9 @@ __pycache__/
 .vscode/*
 !.vscode/settings.json
 .idea/
+
+# Django generated files
+staticfiles/
+media/
+db.sqlite3-journal
+*.log
