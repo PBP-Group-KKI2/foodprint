@@ -1,21 +1,72 @@
 from django.shortcuts import render
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth import login, logout
+from django.shortcuts import redirect, render
+import datetime
+from django.contrib import messages
 
 
 def show_landing(request):
+    last_login = request.COOKIES.get('last_login', 'No active login session / Cookie not found')
+    
     chart_data = {
-            'labels': ['Food Waste', 'Plastic', 'Wood & Yard Waste', 'Paper & Cardboard', 'Other'],
-            'values': [40, 20, 13, 11, 16],
-            'colors': [
-                '#4A5A2A', # Dark Green (Food)
-                '#5E6F32', # Blue (Plastic)
-                '#B0BD8D', # Brown (Wood)
-                '#D0D8B8', # Yellow/Orange (Paper)
-                '#E9EDDD'  # Grey (Other)]
+        "labels": ['Food Waste', 'Plastic', 'Wood & Yard Waste', 'Paper & Cardboard', 'Other'],
+         "values": [40, 20, 13, 11, 16],
+         "colors": [
+             "#4A5A2A",
+             "#5E6F32", 
+             "#B0BD8D", 
+             "#D0D8B8", 
+             "#E9EDDD" 
             ]
-        }
-
-    context = {
-        'chart_data': chart_data,
     }
     
-    return render(request, 'landing_page.html', context)
+    context = {
+        "last_login": last_login,
+        "chart_data": chart_data,
+    }
+    return render(request, "landing_page.html", context)
+
+#ordinary user register an account
+def register(request):
+    form = UserCreationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Account created successfully. Please log in.")
+        return redirect("main:login")
+
+    context = {
+        "name": "FoodPrint",
+        "form": form,
+    }
+    return render(request, "register.html", context)
+
+#login function
+def login_user(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        response = redirect("main:show_main")
+        response.set_cookie('last_login', datetime.datetime.now().strftime('%d-%m %Y [%H:%M:%S]'))
+        return response
+
+    context = {
+        "name": "Foodprint",
+        "form": form,
+    }
+    return render(request, "login.html", context)
+
+#logout function
+def logout_user(request):
+    logout(request)
+    response = redirect("main:show_main")
+    response.delete_cookie('last_login')
+    return redirect("main:show_main")
+
+#for future use, mainly serve as a yurisdiction of editor
+def is_editor(user):
+    return user.groups.filter(name='Editor').exists()
+
