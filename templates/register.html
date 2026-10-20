@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="login-section">
+    <div class="container">
+        <h1>Register</h1>
+        {% for message in messages %}
+            <p class="form-message">{{ message }}</p>
+        {% endfor %}
+        <form method="post" action="{% url 'main:register' %}" class="project-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <p class="form-message">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <p class="form-message">{{ error }}</p>
+            {% endfor %}
+            <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="{% url 'main:login' %}">Login here.</a></p>
+    </div>
+</section>
+{% endblock %}

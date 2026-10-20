@@ -33,36 +33,6 @@
         <span class="navbar__name">FoodPrint</span>
       </a>
 
-<<<<<<< HEAD
-=======
-      # authentication
-      <section class="login-section">
-            <div class="container">
-                <h1>Login</h1>
-                {% for message in messages %}
-                    <p class="form-message">{{ message }}</p>
-                {% endfor %}
-                <form method="post" action="{% url 'main:login' %}" class="project-form">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <p class="form-error">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                        <p class="form-error">{{ error }}</p>
-                    {% endfor %}
-                    <button type="submit" class="button">Login</button>
-                </form>
-                <p>No account yet? <a href="{% url 'main:register' %}">Register here</a>.</p>
-            </div>
-        </section>
-
->>>>>>> b56c1f0 (feat: authorization on landing_page,views,and urls)
       <nav class="navbar__nav" aria-label="Main">
         <ul class="navbar__links">
           {# Replace "#" with {% url '...' %} once each module's URLs exist #}
@@ -76,20 +46,17 @@
 
       <div class="navbar__actions">
         {% if user.is_authenticated %}
+          <a href="{% url 'main:logout' %}" class="btn btn--outline navbar__cta">Log out</a>
           <a href="#" class="btn btn--outline navbar__cta">Report waste</a>
           <a href="#" class="navbar__profile">{{ user.username|slice:":1"|upper }}</a>
         {% else %}
-          <a href="#" class="btn btn--outline navbar__cta">Log in</a>
+                <a href="{% url 'main:login' %}" class="btn btn--outline navbar__cta">Log in</a>
         {% endif %}
 
         <button type="button" class="navbar__menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
           <span class="navbar__menu-icon"></span>
         </button>
       </div>
-<<<<<<< HEAD
-
-=======
->>>>>>> b56c1f0 (feat: authorization on landing_page,views,and urls)
     </div>
 
     {# Mobile menu, hidden by default, toggled with JS at the bottom of this file #}
@@ -101,9 +68,10 @@
         <li><a href="#">Rewards</a></li>
         <li><a href="#">Dashboard</a></li>
         {% if user.is_authenticated %}
+          <li><a href="{% url 'main:logout' %}">Log out</a></li>
           <li><a href="#">Report waste</a></li>
         {% else %}
-          <li><a href="#">Log in</a></li>
+              <li><a href="{% url 'main:login' %}">Log in</a></li>
         {% endif %}
       </ul>
     </nav>
@@ -112,11 +80,7 @@
   <main id="main-content">
 
     {# ============================================================ #}
-<<<<<<< HEAD
     {# HERO — full-bleed background photo, navbar overlays this      #}
-=======
-    {# HERO — full-bleed background photo, navbar overlays this     #}
->>>>>>> b56c1f0 (feat: authorization on landing_page,views,and urls)
     {# ============================================================ #}
     <section class="hero">
       <div class="hero__media" aria-hidden="true">
