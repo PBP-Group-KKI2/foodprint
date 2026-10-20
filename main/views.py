@@ -5,18 +5,27 @@ from django.shortcuts import redirect, render
 import datetime
 from django.contrib import messages
 
-<<<<<<< HEAD
 
 def show_landing(request):
-    return render(request, 'landing_page.html')
-=======
-# Create your views here.
-def show_landing(request):
     last_login = request.COOKIES.get('last_login', 'No active login session / Cookie not found')
+    
+    chart_data = {
+        "labels": ['Food Waste', 'Plastic', 'Wood & Yard Waste', 'Paper & Cardboard', 'Other'],
+         "values": [40, 20, 13, 11, 16],
+         "colors": [
+             "#4A5A2A",
+             "#5E6F32", 
+             "#B0BD8D", 
+             "#D0D8B8", 
+             "#E9EDDD" 
+            ]
+    }
+    
     context = {
         "last_login": last_login,
+        "chart_data": chart_data,
     }
-    return render(request, 'landing_page.html', context)
+    return render(request, "landing_page.html", context)
 
 #ordinary user register an account
 def register(request):
@@ -60,4 +69,4 @@ def logout_user(request):
 #for future use, mainly serve as a yurisdiction of editor
 def is_editor(user):
     return user.groups.filter(name='Editor').exists()
->>>>>>> b56c1f0 (feat: authorization on landing_page,views,and urls)
+
