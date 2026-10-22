@@ -35,7 +35,7 @@
         <a href="#" class="btn btn--outline navbar__cta">Report waste</a>
         <a href="#" class="navbar__profile" title="{{ user.username }}">{{ user.username|slice:":1"|upper }}</a>
       {% else %}
-        <a href="#" class="btn btn--outline navbar__cta">Log in</a>
+        <a href="{% url 'main:login' %}" class="btn btn--outline navbar__cta">Log in</a>
       {% endif %}
 
       <button type="button" class="navbar__menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -56,7 +56,7 @@
       {% if user.is_authenticated %}
         <li><a href="#">Report waste</a></li>
       {% else %}
-        <li><a href="#">Log in</a></li>
+        <li><a href="{% url 'main:login' %}">Log in</a></li>
       {% endif %}
     </ul>
   </nav>

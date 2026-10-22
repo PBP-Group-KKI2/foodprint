@@ -49,7 +49,7 @@ def login_user(request):
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
         login(request, user)
-        response = redirect("main:show_main")
+        response = redirect("main:landing")
         response.set_cookie('last_login', datetime.datetime.now().strftime('%d-%m %Y [%H:%M:%S]'))
         return response
 
@@ -62,9 +62,9 @@ def login_user(request):
 #logout function
 def logout_user(request):
     logout(request)
-    response = redirect("main:show_main")
+    response = redirect("main:landing")
     response.delete_cookie('last_login')
-    return redirect("main:show_main")
+    return response
 
 #for future use, mainly serve as a yurisdiction of editor
 def is_editor(user):
