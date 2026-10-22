@@ -1,0 +1,5 @@
+{% for report in reports %}
+  {% include "reporting/_report_item.html" %}
+{% empty %}
+  <li class="rp-empty">No reports match these filters yet.</li>
+{% endfor %}
