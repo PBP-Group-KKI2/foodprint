@@ -35,6 +35,7 @@
     var map = L.map(el, { scrollWheelZoom: true }).setView(center, zoom);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
+      referrerPolicy: "strict-origin-when-cross-origin",
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
     return map;
@@ -83,11 +84,85 @@
     };
   }
 
-  // ---------- place search (OpenStreetMap Nominatim) ----------
-  // Runs on Enter / the Search button only, never on every keystroke:
-  // Nominatim's free tier allows about one request per second.
+  // ---------- OpenStreetMap Nominatim (place search + reverse lookup) ----------
+  // Nominatim's free tier allows about one request per second, so every call
+  // goes through geocoderFetch(), which records when the last one was sent.
 
   var GEOCODER_URL = "https://nominatim.openstreetmap.org/search";
+  var REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
+  var GEOCODER_GAP_MS = 1100;
+  var lastGeocoderCall = 0;
+
+  function geocoderFetch(url, params) {
+    lastGeocoderCall = Date.now();
+    return fetch(url + "?" + params.toString(), {
+      headers: { Accept: "application/json" },
+      referrerPolicy: "strict-origin-when-cross-origin",
+    }).then(function (res) {
+      if (!res.ok) throw new Error("Geocoder error (" + res.status + ")");
+      return res.json();
+    });
+  }
+
+  // Nominatim address -> { city, district }. In Indonesia "city" is the
+  // kota/kabupaten and "city_district" is usually the kecamatan; the other
+  // keys are fallbacks for places tagged differently.
+  function pickArea(address) {
+    var a = address || {};
+    return {
+      city: a.city || a.town || a.municipality || a.county || a.state_district || "",
+      district: a.city_district || a.district || a.subdistrict || a.suburb || "",
+    };
+  }
+
+  // Looks up the area for a pin once it stops moving. Only the latest pin
+  // position is looked up, and calls stay at least GEOCODER_GAP_MS apart.
+  function makeAreaLookup() {
+    var timer = null;
+    var latest = 0;
+    return function (latlng, onArea) {
+      clearTimeout(timer);
+      var id = ++latest;
+      var wait = Math.max(600, GEOCODER_GAP_MS - (Date.now() - lastGeocoderCall));
+      timer = setTimeout(function () {
+        var params = new URLSearchParams({
+          lat: String(latlng.lat),
+          lon: String(latlng.lng),
+          format: "jsonv2",
+          zoom: "14",
+          addressdetails: "1",
+          "accept-language": "id",
+        });
+        geocoderFetch(REVERSE_URL, params)
+          .then(function (data) {
+            if (id !== latest || !data || !data.address) return; // pin moved again
+            onArea(pickArea(data.address));
+          })
+          .catch(function () { /* leave the fields for the user to fill */ });
+      }, wait);
+    };
+  }
+
+  // City/district inputs: filled from the pin, but never overwrite what the
+  // user typed themselves.
+  function areaFields(form) {
+    var inputs = ["city", "district"]
+      .map(function (name) { return form.querySelector("[name=" + name + "]"); })
+      .filter(Boolean);
+    inputs.forEach(function (input) {
+      input.addEventListener("input", function () { input.dataset.manual = "1"; });
+    });
+    return {
+      fill: function (area) {
+        inputs.forEach(function (input) {
+          if (!input.dataset.manual) input.value = area[input.name] || "";
+        });
+      },
+      reset: function () {
+        inputs.forEach(function (input) { delete input.dataset.manual; });
+      },
+    };
+  }
 
   function shortPlaceName(result) {
     if (result.name) return result.name;
@@ -117,7 +192,7 @@
       input.value = shortPlaceName(result);
       setStatus("");
       map.setView(latlng, 17);
-      onPick(latlng, shortPlaceName(result), result.display_name);
+      onPick(latlng, shortPlaceName(result), pickArea(result.address));
     }
 
     function showResults(results) {
@@ -152,6 +227,7 @@
         q: query,
         format: "jsonv2",
         limit: "5",
+        addressdetails: "1",
         countrycodes: "id",
         "accept-language": "id,en",
         viewbox: [b.getWest(), b.getNorth(), b.getEast(), b.getSouth()].join(","),
@@ -163,11 +239,7 @@
       setStatus("Searching…");
       closeResults();
 
-      fetch(GEOCODER_URL + "?" + params.toString(), { headers: { Accept: "application/json" } })
-        .then(function (res) {
-          if (!res.ok) throw new Error("Search failed (" + res.status + ")");
-          return res.json();
-        })
+      geocoderFetch(GEOCODER_URL, params)
         .then(function (results) {
           if (!results.length) {
             setStatus("No places found. Try a different name, or click the map.");
@@ -338,6 +410,8 @@
     var submitBtn = form.querySelector("#rp-submit");
     var locateBtn = form.querySelector("#rp-locate");
     var draft = null;
+    var area = areaFields(form);
+    var lookupArea = makeAreaLookup();
 
     function clearErrors() {
       form.querySelectorAll("[data-error-for]").forEach(function (el) { el.textContent = ""; });
@@ -352,7 +426,8 @@
       });
     }
 
-    function setLocation(latlng) {
+    // knownArea comes from a search result; otherwise it is looked up.
+    function setLocation(latlng, knownArea) {
       var lat = round6(latlng.lat);
       var lng = round6(latlng.lng);
       latInput.value = lat;
@@ -363,6 +438,8 @@
         draft = draftPin([lat, lng]).addTo(map);
         draft.on("dragend", function () { setLocation(draft.getLatLng()); });
       }
+      if (knownArea) area.fill(knownArea);
+      else lookupArea(L.latLng(lat, lng), area.fill);
       hint.textContent = "Pinned at " + lat.toFixed(5) + ", " + lng.toFixed(5) + ". Drag the pin or click elsewhere to adjust.";
       var locErr = form.querySelector('[data-error-for="latitude"]');
       if (locErr) locErr.textContent = "";
@@ -373,6 +450,7 @@
       latInput.value = "";
       lngInput.value = "";
       if (draft) { map.removeLayer(draft); draft = null; }
+      area.reset();
       hint.innerHTML = hintDefault;
       bindLocate();
     }
@@ -403,8 +481,8 @@
     if (locateBtn) bindLocate();
 
     var placeInput = form.querySelector("[name=location_name]");
-    initPlaceSearch(form.querySelector("[data-place-search]"), map, function (latlng, name) {
-      setLocation(latlng);
+    initPlaceSearch(form.querySelector("[data-place-search]"), map, function (latlng, name, foundArea) {
+      setLocation(latlng, foundArea);
       if (placeInput && !placeInput.value) placeInput.value = name;
     });
 
@@ -461,19 +539,23 @@
     var start = isNaN(lat) || isNaN(lng) ? DEFAULT_CENTER : [lat, lng];
     var map = baseMap(el, start, 16);
     var pin = draftPin(start).addTo(map);
+    var area = areaFields(form);
+    var lookupArea = makeAreaLookup();
 
-    function setLocation(latlng) {
+    function setLocation(latlng, knownArea) {
       latInput.value = round6(latlng.lat);
       lngInput.value = round6(latlng.lng);
       pin.setLatLng(latlng);
+      if (knownArea) area.fill(knownArea);
+      else lookupArea(latlng, area.fill);
     }
 
     pin.on("dragend", function () { setLocation(pin.getLatLng()); });
     map.on("click", function (e) { setLocation(e.latlng); });
 
     var placeInput = form.querySelector("[name=location_name]");
-    initPlaceSearch(form.querySelector("[data-place-search]"), map, function (latlng, name) {
-      setLocation(latlng);
+    initPlaceSearch(form.querySelector("[data-place-search]"), map, function (latlng, name, foundArea) {
+      setLocation(latlng, foundArea);
       if (placeInput && !placeInput.value) placeInput.value = name;
     });
   }

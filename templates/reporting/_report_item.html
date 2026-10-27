@@ -6,7 +6,9 @@
       <span class="rp-item__meta">
         {{ report.get_waste_type_display }} · {{ report.get_severity_display }} · {{ report.created_at|timesince }} ago
       </span>
-      {% if report.location_name %}<span class="rp-item__place">{{ report.location_name }}</span>{% endif %}
+      {% if report.location_name or report.area_label %}
+        <span class="rp-item__place">{{ report.location_name }}{% if report.location_name and report.area_label %} · {% endif %}{{ report.area_label }}</span>
+      {% endif %}
     </span>
     <span class="rp-status rp-status--{{ report.status|lower }}">{{ report.get_status_display }}</span>
   </button>

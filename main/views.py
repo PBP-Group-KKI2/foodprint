@@ -105,7 +105,7 @@ def _form_errors(form):
 
 
 def _filtered_reports(request):
-    """Apply the filter form (search, type, severity, status, mine) to the queryset."""
+    """Apply the filter form (search, type, severity, status, city, district, mine)."""
     reports = WasteReport.objects.select_related("reporter")
     filter_form = ReportFilterForm(request.GET or None)
 
@@ -116,6 +116,8 @@ def _filtered_reports(request):
                 Q(title__icontains=data["q"])
                 | Q(description__icontains=data["q"])
                 | Q(location_name__icontains=data["q"])
+                | Q(city__icontains=data["q"])
+                | Q(district__icontains=data["q"])
             )
         if data["waste_type"]:
             reports = reports.filter(waste_type=data["waste_type"])
@@ -123,11 +125,14 @@ def _filtered_reports(request):
             reports = reports.filter(severity=data["severity"])
         if data["status"]:
             reports = reports.filter(status=data["status"])
+        if data["city"]:
+            reports = reports.filter(city=data["city"])
+        if data["district"]:
+            reports = reports.filter(district=data["district"])
         if data["mine"] and request.user.is_authenticated:
             reports = reports.filter(reporter=request.user)
 
     return reports, filter_form
-
 
 def _get_owned_report(request, pk):
     report = get_object_or_404(WasteReport, pk=pk)
