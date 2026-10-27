@@ -6,13 +6,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_protect
 
-from .forms import ReportFilterForm, WasteReportForm
-from .models import WasteReport
+from .forms import ReportFilterForm, WasteReportForm, ExtendedRegisterForm
+from .models import WasteReport, Profile
 
 
 def show_landing(request):
@@ -37,19 +38,28 @@ def show_landing(request):
     return render(request, "landing_page.html", context)
 
 #ordinary user register an account
-def register(request):
-    form = UserCreationForm(request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Account created successfully. Please log in.")
-        return redirect("main:login")
-
-    context = {
-        "name": "FoodPrint",
-        "form": form,
-    }
-    return render(request, "register.html", context)
+@csrf_protect
+def register(request): 
+    if request.method == 'POST':
+        form = ExtendedRegisterForm(request.POST)  
+        if form.is_valid():
+            user = form.save()
+            
+            selected_role = form.cleaned_data.get('role')
+            user_email = form.cleaned_data.get('email')
+            
+            Profile.objects.create(
+                user=user,
+                role=selected_role,
+                email=user_email
+            )
+            
+            login(request, user)
+            return redirect('main:dashboard_router')
+    else:
+        form = ExtendedRegisterForm()  
+        
+    return render(request, 'register.html', {'form': form})
 
 #login function
 def login_user(request):
@@ -203,3 +213,85 @@ def report_delete(request, pk):
 
     messages.success(request, "Report deleted.")
     return redirect("main:report_map")
+
+# ============================================================
+# PROFILE
+# ============================================================
+
+@login_required
+def organization_dashboard(request):
+    if request.user.profile.role != 'ORGANIZATION':
+        return HttpResponseForbidden("Access denied.")
+    context = {'title': 'Organization Portal'}
+    return render(request, 'dashboards/organization.html', context)
+
+
+@login_required
+def dashboard_router(request):
+    """Mengarahkan pengguna ke dashboard yang tepat berdasarkan Role mereka"""
+    try:
+        user_role = request.user.profile.role
+    except Profile.DoesNotExist:
+        return redirect('create_profile') 
+
+    if user_role == 'OFFICIAL':
+        return redirect('main:official_dashboard')
+    elif user_role == 'ORGANIZATION':
+        return redirect('main:organization_dashboard')
+    else:
+        return redirect('main:users_dashboard')
+
+@login_required
+def official_dashboard(request):
+    if request.user.profile.role != 'OFFICIAL':
+        return HttpResponseForbidden("You don't have access to this page.")
+    
+    # special data logic for official user
+    context = {'title': 'Official Management Console'}
+    return render(request, 'dashboards/official.html', context)
+
+@login_required
+def users_dashboard(request):
+    if request.user.profile.role != 'USERS':
+        return HttpResponseForbidden("Access denied.")
+    
+    # special data logic for user
+    context = {'title': 'Users Portal'}
+    return render(request, 'dashboards/users.html', context)
+
+@login_required
+def update_profile(request):
+    if not hasattr(request.user, 'profile'):
+        return redirect('create_profile') 
+    
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        request.user.email = request.POST.get('email') 
+        request.user.save()
+        return redirect('main:dashboard_router')
+        
+    return render(request, 'profiles/update.html', {'profile': profile})
+
+def register_view(request):
+    if request.method == 'POST':
+        form = ExtendedRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            
+            selected_role = form.cleaned_data.get('role')
+            user_email = form.cleaned_data.get('email')
+            
+            Profile.objects.create(
+                user=user,
+                role=selected_role,
+                email=user_email
+            )
+            
+            login(request, user)
+            
+            return redirect('dashboard_router')
+    else:
+        form = ExtendedRegisterForm()
+        
+    return render(request, 'registration/register.html', {'form': form})

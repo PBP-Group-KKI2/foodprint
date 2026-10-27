@@ -10,6 +10,10 @@ from main.views import (
     report_detail,
     report_update,
     report_delete,
+    dashboard_router,
+    official_dashboard,
+    users_dashboard,
+    update_profile
 )
 
 app_name = 'main'
@@ -27,4 +31,10 @@ urlpatterns = [
     path('reports/<int:pk>/', report_detail, name='report_detail'),
     path('reports/<int:pk>/edit/', report_update, name='report_update'),
     path('reports/<int:pk>/delete/', report_delete, name='report_delete'),
+
+    #Profiles
+    path('dashboard/', dashboard_router, name='dashboard_router'),
+    path('dashboard/official/', official_dashboard, name='official_dashboard'),
+    path('dashboard/users/', users_dashboard, name='users_dashboard'),
+    path('profile/update/', update_profile, name='update_profile'),
 ]
