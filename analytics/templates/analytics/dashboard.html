@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page_title }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Connect to styles.css file -->
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+
+        <main class="main-content">
+            <header>
+                <form hx-get="/analytics/update-dashboard/" hx-target="#chart-grid"></form>
+            </header>
+
+            <!-- Summary Cards -->
+            <div class="kpi-row">
+                <div class="kpi-card">Total Reports: 150</div>
+            </div>
+
+
+            <!-- Chart Canvases -->
+             <div id="chart-grid">
+                <div class="chart-wrapper">
+                    <canvas id="cityChartCanvas"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="districtChartCanvas"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="typeChartCanvas"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="severityChartCanvas"></canvas>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Load context variables for charts-->
+    {{ city_labels|json_script:"city-data" }}
+    {{ city_values|json_script:"city-values-data" }}
+
+    {{ district_labels|json_script:"district-data" }}
+    {{ district_values|json_script:"district-values-data" }}
+
+    {{ type_labels|json_script:"type-data" }}
+    {{ type_values|json_script:"type-values-data" }}
+
+    {{ severity_labels|json_script:"severity-data" }}
+    {{ severity_values|json_script:"severity-values-data" }}
+
+    <!-- To show city, district, and severity charts-->
+    <script>
+        const cityLabels = JSON.parse(document.getElementById('city-data').textContent);
+        const cityValues = JSON.parse(document.getElementById('city-values-data').textContent);
+        const cityCtx = document.getElementById('cityChartCanvas').getContext('2d');
+        
+        const districtLabels = JSON.parse(document.getElementById('district-data').textContent);
+        const districtValues = JSON.parse(document.getElementById('district-values-data').textContent);
+        const districtCtx = document.getElementById('districtChartCanvas').getContext('2d');
+
+        const severityLabels = JSON.parse(document.getElementById('severity-data').textContent);
+        const severityValues = JSON.parse(document.getElementById('severity-values-data').textContent);
+        const severityCtx = document.getElementById('severityChartCanvas').getContext('2d');
+
+        const typeLabels = JSON.parse(document.getElementById('type-data').textContent);
+        const typeValues = JSON.parse(document.getElementById('type-values-data').textContent);
+        const typeCtx = document.getElementById('typeChartCanvas').getContext('2d');
+
+        window.cityChart = new Chart(cityCtx, {
+            type: 'bar',
+            data: {
+                labels: cityLabels,
+                datasets: [{
+                    label: 'Total Reports',
+                    data: cityValues,
+                    backgroundColor: '#1976D2'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false
+            }
+        })
+
+        window.districtChart = new Chart(districtCtx, {
+            type: 'bar',
+            data: {
+                labels: districtLabels,
+                datasets: [{
+                    label: 'Total Reports',
+                    data: districtValues,
+                    backgroundColor: '#1976D2'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false
+            }
+        })
+
+        window.typeChart = new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeValues,
+                    backgroundColor: ['#2E7D32', '#FFA000', '#D32F2F', '#757575']
+                }]
+            },
+            options: {
+                maintainAspectRatio: false
+            }
+        });
+
+        window.severityChart = new Chart(severityCtx, {
+            type: 'pie',
+            data: {
+                labels: severityLabels,
+                datasets: [{
+                    label: 'Report Severity',
+                    data: severityValues,
+                    backgroundColor: ['#2E7D32', '#FFA000', '#D32F2F', '#757575']
+                }]
+            },
+            options: {
+                maintainAspectRatio: false
+            }
+        });
+
+    </script>
+</body>
+</html>
