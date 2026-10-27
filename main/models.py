@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 
 class WasteReport(models.Model):
@@ -84,3 +85,22 @@ class WasteReport(models.Model):
             "is_owner": bool(user is not None and self.is_owned_by(user)),
             "detail_url": self.get_absolute_url(),
         }
+
+# ============================================================
+# PROFILE
+# ============================================================
+
+# mainApplication/models.py
+class Profile(models.Model):
+    ROLE_CHOICES = [
+        ('USERS', 'Users'),
+        ('ORGANIZATION', 'Organization'),
+        ('OFFICIAL', 'Official/Government')
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='USERS')
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"

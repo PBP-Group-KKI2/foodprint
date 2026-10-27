@@ -1,0 +1,28 @@
+<!-- templates/profiles/update.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - FoodPrint{% endblock %}
+
+{% block content %}
+<section class="profile-update-section">
+    <div class="container">
+        <h1>Edit Your Profile</h1>
+        <form method="POST" class="project-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="{{ profile.email }}" required>
+            </div>
+            <button type="submit">Save Changes</button>
+        </form>
+
+        <p style="margin-top: 20px;">
+            <a href="{% url 'main:dashboard_router' %}" class="btn-link">Return to Dashboard</a>
+        </p>
+        <p style="margin-top: 20px;">
+            <a href="{% url 'main:landing' %}" class="btn-link">Return to Home</a>
+        </p>
+
+    </div>
+</section>
+{% endblock %}

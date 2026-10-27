@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <h1>Welcome User</h1>
+        <p>Halo, <strong>{{ request.user.username }}</strong>!</p>
+        <p>Your email: {{ request.user.profile.email }}</p>
+        <p>You're logged in as (Role): Users</p>
+        
+        <hr>
+        <!-- Content/feature CRUD for users can be added from below-->
+        <p><a href="{% url 'main:update_profile' %}">Edit My Profile</a></p>
+    </div>
+</section>
+{% endblock %}

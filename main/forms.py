@@ -1,6 +1,10 @@
 from django import forms
 
 from .models import WasteReport
+from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+from .models import Profile
 
 
 class WasteReportForm(forms.ModelForm):
@@ -69,3 +73,21 @@ class ReportFilterForm(forms.Form):
         choices=[("", "Any status")] + list(WasteReport.Status.choices),
     )
     mine = forms.BooleanField(required=False, label="Only my reports")
+
+# ============================================================
+# PROFILE
+# ============================================================
+
+class ExtendedRegisterForm(UserCreationForm):
+    # Menambahkan dropdown pilihan Role dari model Profile
+    role = forms.ChoiceField(
+        choices=Profile.ROLE_CHOICES, 
+        required=True, 
+        label="Register as",
+        widget=forms.Select(attrs={'class': 'form-control'}) # Menyesuaikan dengan styling CSS jika ada
+    )
+    email = forms.EmailField(required=True, label="Alamat Email")
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('email',)
