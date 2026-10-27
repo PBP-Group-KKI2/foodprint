@@ -1,0 +1,45 @@
+{% comment %}
+  Like and Save buttons. Each is a real POST form, so it works without JavaScript.
+  With HTMX, clicking swaps in a fresh copy of this partial; hx-sync drops extra
+  clicks while a request is still running.
+{% endcomment %}
+<div class="educational-hub__reactions" id="educational-hub-reactions-{{ article.pk }}">
+  {% if user.is_authenticated %}
+    <form method="post" action="{% url 'education:toggle_like' article.pk %}"
+          hx-post="{% url 'education:toggle_like' article.pk %}"
+          hx-target="#educational-hub-reactions-{{ article.pk }}"
+          hx-swap="outerHTML"
+          hx-sync="#educational-hub-reactions-{{ article.pk }}:drop">
+      {% csrf_token %}
+      <button type="submit"
+              class="educational-hub__reaction{% if article.is_liked %} educational-hub__reaction--active{% endif %}"
+              aria-pressed="{{ article.is_liked|yesno:'true,false' }}"
+              aria-label="{% if article.is_liked %}Unlike{% else %}Like{% endif %} this article ({{ article.like_count }} like{{ article.like_count|pluralize }})">
+        <svg class="educational-hub__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
+        <span>{% if article.is_liked %}Liked{% else %}Like{% endif %}</span>
+        <span class="educational-hub__reaction-count">{{ article.like_count }}</span>
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'education:toggle_favorite' article.pk %}"
+          hx-post="{% url 'education:toggle_favorite' article.pk %}"
+          hx-target="#educational-hub-reactions-{{ article.pk }}"
+          hx-swap="outerHTML"
+          hx-sync="#educational-hub-reactions-{{ article.pk }}:drop">
+      {% csrf_token %}
+      <button type="submit"
+              class="educational-hub__reaction{% if article.is_favorited %} educational-hub__reaction--active{% endif %}"
+              aria-pressed="{{ article.is_favorited|yesno:'true,false' }}"
+              aria-label="{% if article.is_favorited %}Remove this article from your saved list{% else %}Save this article to read later{% endif %}">
+        <svg class="educational-hub__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h11v17L12 16.6l-5.5 3.9Z"/></svg>
+        <span>{% if article.is_favorited %}Saved{% else %}Save{% endif %}</span>
+      </button>
+    </form>
+  {% else %}
+    <p class="educational-hub__reaction-summary">
+      {{ article.like_count }} like{{ article.like_count|pluralize }}
+      <span aria-hidden="true">·</span>
+      <a href="{% url 'main:login' %}?next={{ request.path|urlencode }}" class="educational-hub__text-link">Log in to like or save</a>
+    </p>
+  {% endif %}
+</div>

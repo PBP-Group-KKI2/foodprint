@@ -1,0 +1,73 @@
+{% extends 'educational_hub/_layout.html' %}
+
+{% block page_title %}{% if is_saved_view %}Saved articles{% else %}Educational Hub{% endif %}{% endblock page_title %}
+
+{% block hub_content %}
+<section class="section educational-hub__intro">
+  <div class="container">
+    <div class="educational-hub__intro-grid">
+      <div>
+        <p class="section-label">Educational Hub</p>
+        <h1 class="section-title educational-hub__heading">
+          {% if is_saved_view %}Your saved articles{% else %}Learn to see food waste differently{% endif %}
+        </h1>
+        <p class="educational-hub__lead">
+          {% if is_saved_view %}
+            Articles you saved for later. Only you can see this list.
+          {% else %}
+            Guides from citizens, organizations, and officials on telling food waste
+            types apart, sorting them, and wasting less in the first place.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="educational-hub__intro-actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'education:article_create' %}" class="btn btn--primary">Write an article</a>
+        {% else %}
+          <a href="{% url 'main:login' %}?next={{ request.path|urlencode }}" class="btn btn--primary">Log in to write</a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if user.is_authenticated %}
+      <nav class="educational-hub__tabs" aria-label="Article lists">
+        <a href="{% url 'education:article_list' %}" class="educational-hub__tab{% if not is_saved_view %} educational-hub__tab--active{% endif %}"{% if not is_saved_view %} aria-current="page"{% endif %}>All articles</a>
+        <a href="{% url 'education:saved_articles' %}" class="educational-hub__tab{% if is_saved_view %} educational-hub__tab--active{% endif %}"{% if is_saved_view %} aria-current="page"{% endif %}>Saved</a>
+      </nav>
+    {% endif %}
+
+    {# Works as a normal GET form; with HTMX it updates the results as you type (debounced 400 ms). #}
+    <form class="educational-hub__filters"
+          method="get"
+          action="{{ request.path }}"
+          role="search"
+          hx-get="{{ request.path }}"
+          hx-target="#educational-hub-results"
+          hx-trigger="input changed delay:400ms, submit"
+          hx-sync="this:replace"
+          hx-push-url="true"
+          hx-indicator="#educational-hub-results">
+      <div class="educational-hub__search">
+        <label for="{{ filter_form.q.id_for_label }}" class="educational-hub__sr-only">{{ filter_form.q.label }}</label>
+        {{ filter_form.q }}
+        <button type="submit" class="btn btn--primary educational-hub__search-btn">Search</button>
+      </div>
+
+      <fieldset class="educational-hub__chips">
+        <legend class="educational-hub__sr-only">Filter by topic</legend>
+        {% for value, label in filter_form.fields.category.choices %}
+          <label class="educational-hub__chip">
+            <input type="radio" name="category" value="{{ value }}"{% if value == active_category %} checked{% endif %}>
+            <span>{{ label }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+    </form>
+
+    <div id="educational-hub-results" class="educational-hub__results" aria-live="polite">
+      {% include 'educational_hub/_article_results.html' %}
+    </div>
+  </div>
+</section>
+{% endblock hub_content %}

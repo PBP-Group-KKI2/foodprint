@@ -1,0 +1,26 @@
+{# One article in the grid. Follows the landing page's .feature-card look. #}
+<article class="educational-hub__card">
+  <div class="educational-hub__card-top">
+    <span class="badge">{{ article.get_category_display }}</span>
+    {% if article.is_favorited %}<span class="educational-hub__saved-flag">Saved</span>{% endif %}
+  </div>
+
+  <h3 class="educational-hub__card-title">
+    <a href="{{ article.get_absolute_url }}" class="educational-hub__card-link">{{ article.title }}</a>
+  </h3>
+  <p class="educational-hub__card-excerpt">{{ article.excerpt }}</p>
+
+  <footer class="educational-hub__card-meta">
+    <p class="educational-hub__byline">
+      <span class="educational-hub__author">{{ article.author.username }}</span>
+      {% if article.author_role_label %}<span class="educational-hub__role">{{ article.author_role_label }}</span>{% endif %}
+    </p>
+    <p class="educational-hub__card-stats">
+      <time datetime="{{ article.created_at|date:'c' }}">{{ article.created_at|date:"j M Y" }}</time>
+      <span aria-hidden="true">·</span>
+      <span>{{ article.like_count }} like{{ article.like_count|pluralize }}</span>
+      <span aria-hidden="true">·</span>
+      <span>{{ article.comment_count }} comment{{ article.comment_count|pluralize }}</span>
+    </p>
+  </footer>
+</article>

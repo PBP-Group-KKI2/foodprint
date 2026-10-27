@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %}
+  Shared layout for every Educational Hub page.
+  - Loads the module's own CSS/JS (nothing global is changed).
+  - Loads HTMX only on hub pages.
+  - hx-headers sends the CSRF token with every HTMX request inside the hub.
+{% endcomment %}
+
+{% block title %}{% block page_title %}Educational Hub{% endblock page_title %} · FoodPrint{% endblock title %}
+
+{% block meta_description %}Learn how to recognise, sort, and reduce food waste with articles from the FoodPrint community.{% endblock meta_description %}
+
+{% block body_class %}educational-hub-page{% endblock body_class %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'educational_hub/css/educational_hub.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<div class="educational-hub" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {% block hub_content %}{% endblock hub_content %}
+
+  {# Filled by educational_hub.js when an HTMX request fails #}
+  <p class="educational-hub__live-error" id="educational-hub-error" role="alert" hidden></p>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <script src="{% static 'educational_hub/js/educational_hub.js' %}"></script>
+{% endblock extra_js %}
