@@ -28,8 +28,7 @@ class Article(models.Model):
         blank=True,
         help_text="Optional one- or two-sentence preview shown on the article list.",
     )
-    # Plain text only. Templates escape it and turn blank lines into paragraphs,
-    # so users can never inject HTML or scripts.
+    # Plain text only; templates escape it so users can't inject HTML.
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -38,8 +37,7 @@ class Article(models.Model):
         ordering = ["-created_at", "-pk"]
         indexes = [models.Index(fields=["-created_at"], name="eh_article_created_idx")]
         constraints = [
-            # Stops the same author from accidentally publishing the same article twice
-            # (e.g. a double-clicked submit button).
+            # Stops duplicate articles from a double-clicked submit button.
             models.UniqueConstraint(
                 fields=["author", "title"], name="eh_unique_article_title_per_author"
             ),

@@ -4,8 +4,7 @@ from .models import Article, Comment
 
 
 class ArticleForm(forms.ModelForm):
-    """Create/edit form. There is deliberately no `author` field: the view sets it
-    from the logged-in user, so nobody can publish under someone else's name."""
+    """No `author` field on purpose: the view sets it from the logged-in user."""
 
     class Meta:
         model = Article
@@ -32,8 +31,7 @@ class ArticleForm(forms.ModelForm):
         title = self.cleaned_data["title"].strip()
         if len(title) < 5:
             raise forms.ValidationError("Title must be at least 5 characters.")
-        # Django skips the (author, title) unique check because `author` is not a
-        # form field, so check it here to show a friendly error instead of a crash.
+        # Django skips the (author, title) constraint check since author isn't a form field.
         duplicates = Article.objects.filter(author=self.author, title__iexact=title)
         if self.instance.pk:
             duplicates = duplicates.exclude(pk=self.instance.pk)

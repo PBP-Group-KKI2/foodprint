@@ -27,8 +27,7 @@ DUPLICATE_COMMENT_WINDOW = timedelta(seconds=60)
 # ============================================================
 
 def _is_htmx(request):
-    """True for HTMX requests that want a partial. History restores (browser back
-    button) need the full page, so they don't count."""
+    """HTMX history restores (browser back button) need the full page, not a partial."""
     return (
         request.headers.get("HX-Request") == "true"
         and request.headers.get("HX-History-Restore-Request") != "true"
@@ -36,8 +35,7 @@ def _is_htmx(request):
 
 
 def _articles_for(user):
-    """Articles with real like/favorite/comment counts and, for logged-in users,
-    whether they liked/saved each one. All in a single query."""
+    """Articles with like/favorite/comment counts and the user's own like/save state."""
     articles = Article.objects.select_related("author__profile").annotate(
         like_count=Count("likes", distinct=True),
         favorite_count=Count("favorites", distinct=True),
@@ -52,8 +50,7 @@ def _articles_for(user):
 
 
 def _get_manageable_article(request, pk):
-    """Only the author or a staff member may edit/delete. Checked on the server,
-    so typing another article's edit URL by hand still gets a 403."""
+    """Author or staff only. Anyone else gets a 403, even by typing the URL directly."""
     article = get_object_or_404(Article, pk=pk)
     if not article.can_be_managed_by(request.user):
         raise PermissionDenied("You can only change your own articles.")
@@ -61,8 +58,7 @@ def _get_manageable_article(request, pk):
 
 
 def _login_required_response(request, next_url):
-    """Send anonymous users to the login page. HTMX can't follow a normal redirect
-    into a full page, so it gets an HX-Redirect header instead."""
+    """HTMX would swap a normal redirect into the page, so it gets HX-Redirect instead."""
     response = redirect_to_login(next_url)
     if _is_htmx(request):
         htmx_response = HttpResponse(status=401)
@@ -112,7 +108,7 @@ def _render_article_list(request, articles, is_saved_view):
 
     template = "educational_hub/_article_results.html" if _is_htmx(request) else "educational_hub/article_list.html"
     response = render(request, template, context)
-    # Tell browsers the HTMX partial and the full page are different responses.
+    # Same URL returns a partial or a full page, so caches must tell them apart.
     patch_vary_headers(response, ["HX-Request"])
     return response
 
@@ -144,8 +140,7 @@ def article_detail(request, pk):
 # ============================================================
 
 def _save_article_form(request, form, success_message):
-    """Save a valid form, or return None if the (author, title) constraint fails
-    because two identical submissions raced each other."""
+    """Returns None if two identical submissions race past the form's title check."""
     article = form.save(commit=False)
     if article.author_id is None:
         article.author = request.user
@@ -207,8 +202,7 @@ def _toggle_reaction(request, pk, model):
     if not request.user.is_authenticated:
         return _login_required_response(request, article.get_absolute_url())
 
-    # The unique constraint guarantees at most one row per user and article, even
-    # if two requests arrive at the same time (get_or_create handles that race).
+    # The unique constraint keeps this to one row per user, even for simultaneous requests.
     reaction, created = model.objects.get_or_create(article=article, user=request.user)
     if not created:
         reaction.delete()
@@ -249,8 +243,7 @@ def comment_create(request, pk):
 
         if is_duplicate:
             form.add_error(None, "You just posted this comment.")
-        # cache.add only succeeds if the key doesn't exist yet, so this acts as a
-        # simple per-user cooldown between comments.
+        # cache.add fails if the key already exists, which gives a per-user cooldown.
         elif not cache.add(f"eh-comment-cooldown-{request.user.pk}", True, COMMENT_COOLDOWN_SECONDS):
             form.add_error(None, f"Please wait {COMMENT_COOLDOWN_SECONDS} seconds between comments.")
         else:

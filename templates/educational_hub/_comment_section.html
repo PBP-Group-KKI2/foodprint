@@ -1,7 +1,4 @@
-{% comment %}
-  Comment list + form. With HTMX the form posts in place and this whole section
-  is swapped for the server's fresh copy (new comment, or the form with errors).
-{% endcomment %}
+{# With HTMX, posting a comment replaces this whole section with the server's new copy. #}
 <section id="comments" class="educational-hub__comments" aria-labelledby="educational-hub-comments-title">
   <h2 class="educational-hub__comments-title" id="educational-hub-comments-title">
     Comments <span class="educational-hub__comments-count">{{ comments|length }}</span>

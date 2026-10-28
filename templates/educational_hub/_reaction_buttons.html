@@ -1,8 +1,4 @@
-{% comment %}
-  Like and Save buttons. Each is a real POST form, so it works without JavaScript.
-  With HTMX, clicking swaps in a fresh copy of this partial; hx-sync drops extra
-  clicks while a request is still running.
-{% endcomment %}
+{# Real POST forms so they work without JS. hx-sync drops extra clicks mid-request. #}
 <div class="educational-hub__reactions" id="educational-hub-reactions-{{ article.pk }}">
   {% if user.is_authenticated %}
     <form method="post" action="{% url 'education:toggle_like' article.pk %}"

@@ -1,7 +1,5 @@
 /* FoodPrint – Educational Hub
- * HTMX does the actual requests (search, like/save, comments). This file only
- * gives feedback when a request fails, so the page never silently does nothing.
- * The server still validates and authorizes everything.
+ * HTMX sends the requests; this file shows errors and opens the delete modal.
  */
 (function () {
   "use strict";

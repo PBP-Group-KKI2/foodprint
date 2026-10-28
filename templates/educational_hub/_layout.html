@@ -1,11 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% comment %}
-  Shared layout for every Educational Hub page.
-  - Loads the module's own CSS/JS (nothing global is changed).
-  - Loads HTMX only on hub pages.
-  - hx-headers sends the CSRF token with every HTMX request inside the hub.
-{% endcomment %}
+{# Base for hub pages. hx-headers adds the CSRF token to every HTMX request. #}
 
 {% block title %}{% block page_title %}Educational Hub{% endblock page_title %} · FoodPrint{% endblock title %}
 

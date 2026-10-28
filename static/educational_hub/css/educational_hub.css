@@ -1,8 +1,7 @@
 /* ============================================================
    Educational Hub
-   Loaded only on hub pages. Every class is prefixed "educational-hub"
-   so nothing here can affect other modules. Colours, fonts, radii and
-   spacing come from the shared tokens in css/styles.css.
+   Only loaded on hub pages. Classes are prefixed educational-hub so
+   they don't clash with other modules.
    ============================================================ */
 
 .educational-hub-page {

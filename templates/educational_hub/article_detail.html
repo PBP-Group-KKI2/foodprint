@@ -35,7 +35,7 @@
       {% if can_manage %}
         <div class="educational-hub__manage">
           <a href="{% url 'education:article_update' article.pk %}" class="btn educational-hub__btn-secondary">Edit article</a>
-          {# Opens the modal below. Without JavaScript it falls back to the confirmation page. #}
+          {# Opens the modal below; without JS it goes to the confirmation page. #}
           <a href="{% url 'education:article_delete' article.pk %}"
              class="btn educational-hub__btn-danger"
              data-eh-open-dialog="educational-hub-delete-dialog"
