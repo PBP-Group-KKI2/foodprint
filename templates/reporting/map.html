@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+<section class="rp-page"
+         id="rp-app"
+         data-api-url="{% url 'main:report_list_json' %}"
+         data-create-url="{% url 'main:report_create' %}">
+  {% csrf_token %}
+
+  <header class="rp-header">
+    <div>
+      <h1 class="rp-title">Waste Map</h1>
+      <p class="rp-subtitle">Every pin is a food waste sighting reported by the community.</p>
+    </div>
+    <p class="rp-count" id="rp-count" aria-live="polite">
+      {{ reports|length }} report{{ reports|length|pluralize }}
+    </p>
+  </header>
+
+  {% include "reporting/_messages.html" %}
+
+  <div class="rp-layout">
+    <div class="rp-map-wrap">
+      <div id="rp-map" class="rp-map" role="application" aria-label="Map of waste reports"></div>
+      <ul class="rp-legend" aria-label="Severity legend">
+        <li><span class="rp-dot rp-dot--low"></span>Low</li>
+        <li><span class="rp-dot rp-dot--medium"></span>Medium</li>
+        <li><span class="rp-dot rp-dot--high"></span>High</li>
+      </ul>
+    </div>
+
+    <aside class="rp-sidebar">
+      {# ---------------- Report form (AJAX) ---------------- #}
+      <section class="rp-card" id="rp-form-card">
+        <h2 class="rp-card__title">Report waste</h2>
+
+        {% if user.is_authenticated %}
+          <form id="rp-form" class="rp-form" novalidate>
+            {% csrf_token %}
+            {% include "reporting/_place_search.html" %}
+            <p class="rp-hint" id="rp-location-hint">
+              Or click the map to pin the location, or
+              <button type="button" class="rp-link" id="rp-locate">use my location</button>.
+            </p>
+            <p class="rp-error" data-error-for="latitude"></p>
+            {{ report_form.latitude }}
+            {{ report_form.longitude }}
+
+            <div class="rp-field">
+              <label for="{{ report_form.title.id_for_label }}">Title</label>
+              {{ report_form.title }}
+              <p class="rp-error" data-error-for="title"></p>
+            </div>
+
+            <div class="rp-field-row">
+              <div class="rp-field">
+                <label for="{{ report_form.waste_type.id_for_label }}">Type</label>
+                {{ report_form.waste_type }}
+                <p class="rp-error" data-error-for="waste_type"></p>
+              </div>
+              <div class="rp-field">
+                <label for="{{ report_form.severity.id_for_label }}">Severity</label>
+                {{ report_form.severity }}
+                <p class="rp-error" data-error-for="severity"></p>
+              </div>
+            </div>
+
+            <div class="rp-field">
+              <label for="{{ report_form.location_name.id_for_label }}">Place <span class="rp-optional">(optional)</span></label>
+              {{ report_form.location_name }}
+              <p class="rp-error" data-error-for="location_name"></p>
+            </div>
+
+            <div class="rp-field-row">
+              <div class="rp-field">
+                <label for="{{ report_form.city.id_for_label }}">City <span class="rp-optional">(auto)</span></label>
+                {{ report_form.city }}
+                <p class="rp-error" data-error-for="city"></p>
+              </div>
+              <div class="rp-field">
+                <label for="{{ report_form.district.id_for_label }}">District <span class="rp-optional">(auto)</span></label>
+                {{ report_form.district }}
+                <p class="rp-error" data-error-for="district"></p>
+              </div>
+            </div>
+
+            <div class="rp-field">
+              <label for="{{ report_form.description.id_for_label }}">Description <span class="rp-optional">(optional)</span></label>
+              {{ report_form.description }}
+              <p class="rp-error" data-error-for="description"></p>
+            </div>
+
+            <p class="rp-error" data-error-for="__all__"></p>
+            <p class="rp-success" id="rp-form-status" aria-live="polite"></p>
+            <button type="submit" class="rp-btn rp-btn--primary" id="rp-submit">Submit report</button>
+          </form>
+        {% else %}
+          <p class="rp-hint">
+            <a href="{% url 'main:login' %}?next={{ request.path|urlencode }}">Log in</a>
+            to pin food waste on the map.
+          </p>
+        {% endif %}
+      </section>
+
+      {# ---------------- Filters ---------------- #}
+      <section class="rp-card">
+        <h2 class="rp-card__title">Filter</h2>
+        <form id="rp-filter" class="rp-filter" method="get" action="{% url 'main:report_map' %}">
+          {{ filter_form.q }}
+          <div class="rp-field-row">
+            {{ filter_form.waste_type }}
+            {{ filter_form.severity }}
+          </div>
+          {{ filter_form.status }}
+          <div class="rp-field-row">
+            {{ filter_form.city }}
+            {{ filter_form.district }}
+          </div>
+          {% if user.is_authenticated %}
+            <label class="rp-check">{{ filter_form.mine }} Only my reports</label>
+          {% endif %}
+          <noscript><button type="submit" class="rp-btn">Apply</button></noscript>
+        </form>
+      </section>
+
+      {# ---------------- List ---------------- #}
+      <section class="rp-card rp-card--list">
+        <h2 class="rp-card__title">Reports</h2>
+        <ul class="rp-list" id="rp-list">
+          {% include "reporting/_report_list.html" %}
+        </ul>
+      </section>
+    </aside>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{% static 'reporting/js/map.js' %}"></script>
+{% endblock content %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+<section class="rp-page rp-page--narrow">
+  <p><a href="{% url 'main:report_detail' report.pk %}" class="rp-back">&larr; Back to report</a></p>
+
+  <div class="rp-card">
+    <h1 class="rp-title">Edit report</h1>
+    <form method="post" class="rp-form" id="rp-edit-form">
+      {% csrf_token %}
+
+      {% include "reporting/_place_search.html" %}
+      <p class="rp-hint">Or click the map / drag the pin to move the location.</p>
+
+      <div id="rp-picker-map" class="rp-map rp-map--small" aria-label="Pick the report location"></div>
+      {{ form.latitude }}
+      {{ form.longitude }}
+      {% for error in form.latitude.errors %}<p class="rp-error">{{ error }}</p>{% endfor %}
+      {% for error in form.longitude.errors %}<p class="rp-error">{{ error }}</p>{% endfor %}
+      {% for error in form.non_field_errors %}<p class="rp-error">{{ error }}</p>{% endfor %}
+
+      {% for field in form.visible_fields %}
+        <div class="rp-field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="rp-error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+
+      <div class="rp-actions">
+        <button type="submit" class="rp-btn rp-btn--primary">Save changes</button>
+        <a href="{% url 'main:report_detail' report.pk %}" class="rp-btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{% static 'reporting/js/map.js' %}"></script>
+{% endblock content %}

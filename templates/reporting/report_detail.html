@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+<section class="rp-page rp-page--narrow">
+  <p><a href="{% url 'main:report_map' %}" class="rp-back">&larr; Back to map</a></p>
+  {% include "reporting/_messages.html" %}
+
+  <article class="rp-card">
+    <header class="rp-detail__header">
+      <div>
+        <h1 class="rp-title">{{ report.title }}</h1>
+        <p class="rp-subtitle">
+          Reported by {{ report.reporter.username }} · {{ report.created_at|date:"j M Y, H:i" }}
+        </p>
+      </div>
+      <span class="rp-status rp-status--{{ report.status|lower }}">{{ report.get_status_display }}</span>
+    </header>
+
+    <div id="rp-detail-map"
+         class="rp-map rp-map--small"
+         data-lat="{{ report.latitude|stringformat:'f' }}"
+         data-lng="{{ report.longitude|stringformat:'f' }}"
+         data-severity="{{ report.severity }}"
+         role="img"
+         aria-label="Location of this report"></div>
+
+    <dl class="rp-detail__facts">
+      <div><dt>Type</dt><dd>{{ report.get_waste_type_display }}</dd></div>
+      <div><dt>Severity</dt><dd><span class="rp-dot rp-dot--{{ report.severity|lower }}"></span> {{ report.get_severity_display }}</dd></div>
+      {% if report.location_name %}<div><dt>Place</dt><dd>{{ report.location_name }}</dd></div>{% endif %}
+      {% if report.district %}<div><dt>District</dt><dd>{{ report.district }}</dd></div>{% endif %}
+      {% if report.city %}<div><dt>City</dt><dd>{{ report.city }}</dd></div>{% endif %}
+      <div><dt>Coordinates</dt><dd>{{ report.latitude|floatformat:5 }}, {{ report.longitude|floatformat:5 }}</dd></div>
+    </dl>
+
+    {% if report.description %}
+      <p class="rp-detail__description">{{ report.description|linebreaksbr }}</p>
+    {% endif %}
+
+    {% if is_owner %}
+      <div class="rp-actions">
+        <a href="{% url 'main:report_update' report.pk %}" class="rp-btn">Edit</a>
+        <form method="post" action="{% url 'main:report_delete' report.pk %}"
+              onsubmit="return confirm('Delete this report? This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit" class="rp-btn rp-btn--danger">Delete</button>
+        </form>
+      </div>
+    {% endif %}
+  </article>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{% static 'reporting/js/map.js' %}"></script>
+{% endblock content %}
