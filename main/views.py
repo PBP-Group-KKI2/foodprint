@@ -1,9 +1,9 @@
 import datetime
 
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseForbidden
@@ -265,22 +265,50 @@ def users_dashboard(request):
 
 @login_required
 def update_profile(request):
-    if not hasattr(request.user, 'profile'):
-        from .models import Profile
-        Profile.objects.create(user=request.user, role='USERS') 
-    
-    profile = request.user.profile
-    
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    user_role = profile.role
+
     if request.method == 'POST':
-        request.user.email = request.POST.get('email') 
+        password_form = PasswordChangeForm(request.user, request.POST)
+        
+        input_email = request.POST.get('email')
+        
+        if user_role == 'USERS':
+            input_username = request.POST.get('username')
+            if input_username:
+                request.user.username = input_username
+        
+        if input_email:
+            request.user.email = input_email
+            profile.email = input_email
+
+        if request.POST.get('old_password'):
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Password Anda berhasil diperbarui!')
+            else:
+                messages.error(request, 'Gagal memperbarui password. Silakan periksa kembali input Anda.')
+                return render(request, 'profiles/update.html', {
+                    'profile': profile, 
+                    'user_role': user_role, 
+                    'password_form': password_form
+                })
+
         request.user.save()
+        profile.save()
+        
+        messages.success(request, 'Profil Anda berhasil diperbarui!')
         return redirect('main:dashboard_router')
+
+    else:
+        password_form = PasswordChangeForm(request.user)
 
     context = {
         'profile': profile,
-        'user_email': request.user.email
+        'user_role': user_role,
+        'password_form': password_form
     }
-        
     return render(request, 'profiles/update.html', context)
 
 def register_view(request):
