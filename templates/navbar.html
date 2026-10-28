@@ -26,7 +26,12 @@
         <li><a href="{% url 'main:report_map' %}" class="navbar__link{% if view_name == 'main:report_map' %} navbar__link--active{% endif %}"{% if view_name == 'main:report_map' %} aria-current="page"{% endif %}>Map</a></li>
         <li><a href="#" class="navbar__link{% if ns == 'education' %} navbar__link--active{% endif %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
         <li><a href="#" class="navbar__link{% if ns == 'rewards' %} navbar__link--active{% endif %}"{% if ns == 'rewards' %} aria-current="page"{% endif %}>Rewards</a></li>
-        <li><a href="#" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Dashboard</a></li>
+        <li>
+          <a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" 
+             class="navbar__link{% if view_name == 'main:dashboard_router' %} navbar__link--active{% endif %}">
+             Dashboard
+          </a>
+        </li>
       </ul>
     </nav>
 
@@ -52,7 +57,12 @@
       <li><a href="{% url 'main:report_map' %}"{% if view_name == 'main:report_map' %} aria-current="page"{% endif %}>Map</a></li>
       <li><a href="#"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
       <li><a href="#"{% if ns == 'rewards' %} aria-current="page"{% endif %}>Rewards</a></li>
-      <li><a href="#"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Dashboard</a></li>
+      <li>
+        <a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" 
+           class="navbar__link{% if view_name == 'main:dashboard_router' %} navbar__link--active{% endif %}">
+           Dashboard
+        </a>
+      </li>
       {% if user.is_authenticated %}
       <li><a href="{% url 'main:report_map' %}#rp-form-card">Report waste</a></li>
       {% else %}

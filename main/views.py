@@ -228,11 +228,15 @@ def organization_dashboard(request):
 
 @login_required
 def dashboard_router(request):
-    """Mengarahkan pengguna ke dashboard yang tepat berdasarkan Role mereka"""
-    try:
-        user_role = request.user.profile.role
-    except Profile.DoesNotExist:
-        return redirect('create_profile') 
+    """Directing users to the appropriate dashboard based on their role"""
+
+    from .models import Profile
+    profile, _ = Profile.objects.get_or_create(
+        user=request.user,
+        defaults={'role': 'USERS'} 
+    )
+        
+    user_role = profile.role
 
     if user_role == 'OFFICIAL':
         return redirect('main:official_dashboard')
@@ -262,7 +266,8 @@ def users_dashboard(request):
 @login_required
 def update_profile(request):
     if not hasattr(request.user, 'profile'):
-        return redirect('create_profile') 
+        from .models import Profile
+        Profile.objects.create(user=request.user, role='USERS') 
     
     profile = request.user.profile
     
@@ -270,8 +275,13 @@ def update_profile(request):
         request.user.email = request.POST.get('email') 
         request.user.save()
         return redirect('main:dashboard_router')
+
+    context = {
+        'profile': profile,
+        'user_email': request.user.email
+    }
         
-    return render(request, 'profiles/update.html', {'profile': profile})
+    return render(request, 'profiles/update.html', context)
 
 def register_view(request):
     if request.method == 'POST':

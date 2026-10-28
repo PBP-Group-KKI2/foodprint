@@ -13,7 +13,8 @@ from main.views import (
     dashboard_router,
     official_dashboard,
     users_dashboard,
-    update_profile
+    update_profile,
+    organization_dashboard
 )
 
 app_name = 'main'
@@ -37,4 +38,5 @@ urlpatterns = [
     path('dashboard/official/', official_dashboard, name='official_dashboard'),
     path('dashboard/users/', users_dashboard, name='users_dashboard'),
     path('profile/update/', update_profile, name='update_profile'),
+    path('dashboard/organization/', organization_dashboard, name='organization_dashboard'),
 ]
