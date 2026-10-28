@@ -1,0 +1,53 @@
+{# Results grid. Rendered inside article_list.html, and on its own for HTMX search/pagination. #}
+<h2 class="educational-hub__sr-only">Articles</h2>
+
+{% if page_obj.paginator.count %}
+  <p class="educational-hub__count">
+    {{ page_obj.paginator.count }} article{{ page_obj.paginator.count|pluralize }}{% if is_filtered %} found{% endif %}
+  </p>
+
+  <div class="educational-hub__grid">
+    {% for article in page_obj %}
+      {% include 'educational_hub/_article_card.html' %}
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <nav class="educational-hub__pagination" aria-label="Pages">
+      {% if page_obj.has_previous %}
+        <a href="{% querystring page=page_obj.previous_page_number %}"
+           hx-get="{% querystring page=page_obj.previous_page_number %}"
+           hx-target="#educational-hub-results"
+           hx-push-url="true"
+           class="educational-hub__page-link">&larr; Newer</a>
+      {% endif %}
+      <span class="educational-hub__page-status">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="{% querystring page=page_obj.next_page_number %}"
+           hx-get="{% querystring page=page_obj.next_page_number %}"
+           hx-target="#educational-hub-results"
+           hx-push-url="true"
+           class="educational-hub__page-link">Older &rarr;</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+
+{% else %}
+  <div class="educational-hub__empty">
+    {% if is_filtered %}
+      <h3 class="educational-hub__empty-title">No articles match your search</h3>
+      <p>Try a different keyword or choose another topic.</p>
+      <a href="{{ request.path }}" class="educational-hub__text-link">Clear filters</a>
+    {% elif is_saved_view %}
+      <h3 class="educational-hub__empty-title">You haven't saved any articles yet</h3>
+      <p>Use the “Save” button on an article to keep it here for later.</p>
+      <a href="{% url 'education:article_list' %}" class="educational-hub__text-link">Browse articles</a>
+    {% else %}
+      <h3 class="educational-hub__empty-title">No articles yet</h3>
+      <p>Be the first to share what you know about food waste.</p>
+      {% if user.is_authenticated %}
+        <a href="{% url 'education:article_create' %}" class="btn btn--primary">Write the first article</a>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endif %}
