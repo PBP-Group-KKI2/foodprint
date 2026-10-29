@@ -259,8 +259,12 @@ def users_dashboard(request):
     if request.user.profile.role != 'USERS':
         return HttpResponseForbidden("Access denied.")
     
-    # special data logic for user
-    context = {'title': 'Users Portal'}
+    profile = request.user.profile
+    
+    context = {
+        'title': 'Users Portal',
+        'profile': profile, 
+    }
     return render(request, 'dashboards/users.html', context)
 
 @login_required
@@ -286,9 +290,9 @@ def update_profile(request):
             if password_form.is_valid():
                 user = password_form.save()
                 update_session_auth_hash(request, user)
-                messages.success(request, 'Password Anda berhasil diperbarui!')
+                messages.success(request, 'Your password has been successfully updated!')
             else:
-                messages.error(request, 'Gagal memperbarui password. Silakan periksa kembali input Anda.')
+                messages.error(request, 'Failed to update password. Please double-check your input.')
                 return render(request, 'profiles/update.html', {
                     'profile': profile, 
                     'user_role': user_role, 
@@ -298,7 +302,7 @@ def update_profile(request):
         request.user.save()
         profile.save()
         
-        messages.success(request, 'Profil Anda berhasil diperbarui!')
+        messages.success(request, 'Your profile has been successfully updated!')
         return redirect('main:dashboard_router')
 
     else:

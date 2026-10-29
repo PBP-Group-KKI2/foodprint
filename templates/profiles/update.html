@@ -1,11 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}Edit Profil - FoodPrint{% endblock %}
+{% block title %}Edit Profile - FoodPrint{% endblock %}
 
 {% block content %}
 <section class="profile-update-section">
     <div class="container">
-        <h1>Edit Profil Anda</h1>
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert--{{ message.tags }}">
+                    <span class="alert__icon"></span>
+                    <span class="alert__text">{{ message }}</span>
+                    <button type="button" class="alert__close" onclick="this.parentElement.remove();">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <h1>Edit Your Profile</h1>
         
         <form method="POST" class="project-form">
             {% csrf_token %}
