@@ -1221,6 +1221,15 @@ button { font: inherit; cursor: pointer; }
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
+.dashboard-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  transition: transform 0.2s ease;
+}
+
 .dashboard-card h3 {
   font-size: 18px;
   color: #111827;
@@ -1278,6 +1287,97 @@ button { font: inherit; cursor: pointer; }
   
   .dashboard-section {
     padding: 30px 16px;
+  }
+}
+
+.profile-update-section input[type="password"] {
+  padding: 12px 16px;
+  font-size: 15px;
+  font-family: 'Manrope', sans-serif;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #1f2937;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-update-section input[type="password"]:focus {
+  outline: none;
+  border-color: #4b5563;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.15);
+}
+
+.messages-container {
+  width: 100%;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Base Alert */
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid transparent;
+  position: relative;
+  animation: slideInDown 0.3s ease-out;
+}
+
+alert--success {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+.alert--success .alert__icon::before {
+  content: "✓";
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.alert--error {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+.alert--error .alert__icon::before {
+  content: "⚠";
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.alert__close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0 0 12px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.alert__close:hover {
+  opacity: 1;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 /* ============================================================

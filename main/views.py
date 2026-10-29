@@ -1,9 +1,9 @@
 import datetime
 
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseForbidden
@@ -244,11 +244,15 @@ def organization_dashboard(request):
 
 @login_required
 def dashboard_router(request):
-    """Mengarahkan pengguna ke dashboard yang tepat berdasarkan Role mereka"""
-    try:
-        user_role = request.user.profile.role
-    except Profile.DoesNotExist:
-        return redirect('create_profile') 
+    """Directing users to the appropriate dashboard based on their role"""
+
+    from .models import Profile
+    profile, _ = Profile.objects.get_or_create(
+        user=request.user,
+        defaults={'role': 'USERS'} 
+    )
+        
+    user_role = profile.role
 
     if user_role == 'OFFICIAL':
         return redirect('main:official_dashboard')
@@ -271,23 +275,61 @@ def users_dashboard(request):
     if request.user.profile.role != 'USERS':
         return HttpResponseForbidden("Access denied.")
     
-    # special data logic for user
-    context = {'title': 'Users Portal'}
+    profile = request.user.profile
+    
+    context = {
+        'title': 'Users Portal',
+        'profile': profile, 
+    }
     return render(request, 'dashboards/users.html', context)
 
 @login_required
 def update_profile(request):
-    if not hasattr(request.user, 'profile'):
-        return redirect('create_profile') 
-    
-    profile = request.user.profile
-    
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    user_role = profile.role
+
     if request.method == 'POST':
-        request.user.email = request.POST.get('email') 
-        request.user.save()
-        return redirect('main:dashboard_router')
+        password_form = PasswordChangeForm(request.user, request.POST)
         
-    return render(request, 'profiles/update.html', {'profile': profile})
+        input_email = request.POST.get('email')
+        
+        if user_role == 'USERS':
+            input_username = request.POST.get('username')
+            if input_username:
+                request.user.username = input_username
+        
+        if input_email:
+            request.user.email = input_email
+            profile.email = input_email
+
+        if request.POST.get('old_password'):
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Your password has been successfully updated!')
+            else:
+                messages.error(request, 'Failed to update password. Please double-check your input.')
+                return render(request, 'profiles/update.html', {
+                    'profile': profile, 
+                    'user_role': user_role, 
+                    'password_form': password_form
+                })
+
+        request.user.save()
+        profile.save()
+        
+        messages.success(request, 'Your profile has been successfully updated!')
+        return redirect('main:dashboard_router')
+
+    else:
+        password_form = PasswordChangeForm(request.user)
+
+    context = {
+        'profile': profile,
+        'user_role': user_role,
+        'password_form': password_form
+    }
+    return render(request, 'profiles/update.html', context)
 
 def register_view(request):
     if request.method == 'POST':

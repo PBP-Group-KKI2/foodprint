@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Organization Dashboard - FoodPrint{% endblock %}
+
+{% block content %}
+<div class="dashboard-section">
+    <div class="container">
+        
+        <div class="dashboard-header">
+            <div>
+                <h1>Welcome to the Organization Portal</h1>
+                <p>Halo, <strong>{{ request.user.username }}</strong>! Manage your food waste programs here.</p>
+            </div>
+            <span class="role-badge">{{ request.user.profile.role }}</span>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <div class="dashboard-card">
+                <h3>Organization Detail</h3>
+                <p><strong>Account Name:</strong> {{ request.user.username }}</p>
+                <p><strong>Contact Email:</strong> {{ request.user.email }}</p>
+                <div class="dashboard-actions" style="margin-top: 24px;">
+                    <a href="{% url 'main:update_profile' %}" class="dashboard-btn dashboard-btn--primary">Edit Profile Contact</a>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Food Report Sourcing</h3>
+                <p>Collect data on food waste claims from reports by local residents.</p>
+                <div class="dashboard-actions" style="margin-top: 24px;">
+                    <a href="{% url 'main:report_map' %}" class="dashboard-btn dashboard-btn--outline">Open Food Waste Map</a>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Food Waste Analytics</h3>
+                <p>Analyze food waste trends, look at data insights, and track programmatic impacts over time.</p>
+                <div class="dashboard-actions" style="margin-top: 24px;">
+                    <a href="{% url 'main:show_analytics' %}" class="dashboard-btn dashboard-btn--outline">View Data Insights</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -14,9 +14,11 @@ from main.views import (
     official_dashboard,
     users_dashboard,
     update_profile,
+    organization_dashboard,
     show_reward,
     toggle_rank
 )
+from analytics.views import show_analytics
 
 app_name = 'main'
 
@@ -39,6 +41,9 @@ urlpatterns = [
     path('dashboard/official/', official_dashboard, name='official_dashboard'),
     path('dashboard/users/', users_dashboard, name='users_dashboard'),
     path('profile/update/', update_profile, name='update_profile'),
+    path('dashboard/organization/', organization_dashboard, name='organization_dashboard'),
+    #the path below is yellow due to currently not connected to the modules it referenced
+    path('', show_analytics, name ='show_analytics'),
 
     #Reward
     path('rewards/', show_reward, name='show_reward'),
