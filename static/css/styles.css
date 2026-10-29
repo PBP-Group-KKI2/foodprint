@@ -1335,3 +1335,67 @@ button { font: inherit; cursor: pointer; }
   color: var(--green-700);
   font-weight: 600;
 }
+
+/* ============================================================ */
+/* REWARD                                                       */
+/* ============================================================ */
+:root{
+  --rw-brownDirt: #C74B14;
+  --rw-blueLeast: #258EFF;
+  --rw-redBlood: #FA0000;
+  --rw-greenPeace: #20D430;
+  --rw-goldShine: #FFFE91;
+}
+
+.navbar__username { font-weight: 600; }
+
+.rank-tag {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rank-tag--common { color: var(--rw-brownDirt); }
+.rank-tag--civic  { color: var(--rw-blueLeast); }   /* blue */
+
+.rank-toggle { margin: 0; }
+.rank-toggle__btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.progress {
+  position: relative;
+  width: 210px;
+  height: 30px;
+  background: #9cbab4;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress__fill {
+  width: 0%;
+  height: 100%;
+  background: #009579;
+  transition: all 0.2s;
+}
+
+.progress__text {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  font: bold 14px "Quicksand", sans-serif;
+  color: #ffffff;
+}

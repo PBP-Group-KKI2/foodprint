@@ -39,7 +39,7 @@
           <li><a href="{% url 'main:landing' %}" class="navbar__link navbar__link--active">Home</a></li>
           <li><a href="{% url 'main:report_map' %}" class="navbar__link">Map</a></li>
           <li><a href="{% url 'education:article_list' %}" class="navbar__link">Learn</a></li>
-          <li><a href="#" class="navbar__link">Rewards</a></li>
+          <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Rewards</a></li>
           <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Dashboard</a></li>
         </ul>
       </nav>
@@ -51,6 +51,19 @@
           <a href="{% url 'main:update_profile' %}" class="navbar__profile" title="Edit Profile ({{ user.username }})">
             {{ user.username|slice:":1"|upper }}
           </a>
+          {% if user.profile %}
+          <span class="navbar__username">{{ user.username }}</span>
+          {% if user.profile.show_rank %}
+            <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
+          {% endif %}
+          <form method="post" action="{% url 'main:toggle_rank' %}" class="rank-toggle">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="rank-toggle__btn">
+              {% if user.profile.show_rank %}Hide rank{% else %}Show rank{% endif %}
+            </button>
+          </form>
+        {% endif %}
         {% else %}
                 <a href="{% url 'main:login' %}" class="btn btn--outline navbar__cta">Log in</a>
         {% endif %}
@@ -67,7 +80,7 @@
         <li><a href="{% url 'main:landing' %}">Home</a></li>
         <li><a href="{% url 'main:report_map' %}">Map</a></li>
         <li><a href="{% url 'education:article_list' %}">Learn</a></li>
-        <li><a href="#">Rewards</a></li>
+        <li><a href="{% url 'main:show_reward' %}">Rewards</a></li>
         <li><a href="#">Dashboard</a></li>
         {% if user.is_authenticated %}
           <li><a href="{% url 'main:logout' %}">Log out</a></li>

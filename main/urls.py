@@ -13,7 +13,9 @@ from main.views import (
     dashboard_router,
     official_dashboard,
     users_dashboard,
-    update_profile
+    update_profile,
+    show_reward,
+    toggle_rank
 )
 
 app_name = 'main'
@@ -37,4 +39,8 @@ urlpatterns = [
     path('dashboard/official/', official_dashboard, name='official_dashboard'),
     path('dashboard/users/', users_dashboard, name='users_dashboard'),
     path('profile/update/', update_profile, name='update_profile'),
+
+    #Reward
+    path('rewards/', show_reward, name='show_reward'),
+    path('rewards/toggle-rank/', toggle_rank, name='toggle_rank'),
 ]
