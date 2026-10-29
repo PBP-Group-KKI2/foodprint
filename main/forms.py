@@ -73,6 +73,13 @@ class WasteReportForm(forms.ModelForm):
         return self._tidy(self.cleaned_data.get("district", ""))
 
 
+class WasteReportAdminForm(WasteReportForm):
+    """Same as WasteReportForm, plus Status, for admins on the edit page."""
+
+    class Meta(WasteReportForm.Meta):
+        fields = WasteReportForm.Meta.fields + ["status"]
+
+
 class ReportFilterForm(forms.Form):
     """Filters for the map and list. All optional; empty means 'any'."""
 

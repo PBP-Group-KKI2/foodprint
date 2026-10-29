@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'main',
     'educational_hub',
     'task_dispatch',
+    'analytics',
 ]
 
 MIDDLEWARE = [
