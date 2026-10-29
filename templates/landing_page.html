@@ -37,7 +37,7 @@
         <ul class="navbar__links">
           {# Replace "#" with {% url '...' %} once each module's URLs exist #}
           <li><a href="{% url 'main:landing' %}" class="navbar__link navbar__link--active">Home</a></li>
-          <li><a href="{% url 'main:report_map' %}" class="navbar__link">Map</a></li>
+          <li><a href="{% url 'main:report_map' %}" class="navbar__link">Reporting &amp; Mapping</a></li>
           <li><a href="{% url 'education:article_list' %}" class="navbar__link">Learn</a></li>
           <li><a href="#" class="navbar__link">Rewards</a></li>
           <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Dashboard</a></li>
@@ -47,7 +47,6 @@
       <div class="navbar__actions">
         {% if user.is_authenticated %}
           <a href="{% url 'main:logout' %}" class="btn btn--outline navbar__cta">Log out</a>
-          <a href="{% url 'main:report_map' %}#rp-form-card" class="btn btn--outline navbar__cta">Report waste</a>
           <a href="{% url 'main:update_profile' %}" class="navbar__profile" title="Edit Profile ({{ user.username }})">
             {{ user.username|slice:":1"|upper }}
           </a>
@@ -65,13 +64,12 @@
     <nav id="mobile-menu" class="navbar__mobile" aria-label="Mobile" hidden>
       <ul class="navbar__mobile-links">
         <li><a href="{% url 'main:landing' %}">Home</a></li>
-        <li><a href="{% url 'main:report_map' %}">Map</a></li>
+        <li><a href="{% url 'main:report_map' %}">Reporting &amp; Mapping</a></li>
         <li><a href="{% url 'education:article_list' %}">Learn</a></li>
         <li><a href="#">Rewards</a></li>
         <li><a href="#">Dashboard</a></li>
         {% if user.is_authenticated %}
           <li><a href="{% url 'main:logout' %}">Log out</a></li>
-          <li><a href="{% url 'main:report_map' %}#rp-form-card">Report waste</a></li>
           <li><a href="{% url 'main:update_profile' %}">Edit Profile</a></li>
         {% else %}
               <li><a href="{% url 'main:login' %}">Log in</a></li>
@@ -390,8 +388,7 @@
         <div class="footer__col">
           <h3 class="footer__heading">Explore</h3>
           <ul>
-            <li><a href="{% url 'main:report_map' %}#rp-form-card">Report waste</a></li>
-            <li><a href="{% url 'main:report_map' %}">Waste map</a></li>
+            <li><a href="{% url 'main:report_map' %}">Reporting &amp; Mapping</a></li>
             <li><a href="{% url 'education:article_list' %}">Learn</a></li>
           </ul>
         </div>
