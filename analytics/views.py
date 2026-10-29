@@ -4,7 +4,7 @@ from main.models import WasteReport
 from analytics.models import DashboardPreset
 
 # Create your views here.
-def show_dashboard(request):
+def show_analytics(request):
     # Applying the preset filters
     base_qs = WasteReport.objects.all()
 
@@ -60,7 +60,7 @@ def show_dashboard(request):
     user_presets = DashboardPreset.objects.filter(user=request.user) if request.user.is_authenticated else []
 
     context = {
-        'page_title' : 'Organization Dashboard',
+        'page_title' : 'Organization Analytics Dashboard',
         'available_cities': available_cities,
         'available_districts': available_districts,
         'waste_types': waste_types,
@@ -79,7 +79,7 @@ def show_dashboard(request):
 
     }
 
-    return render(request, "analytics/dashboard.html", context)
+    return render(request, "analytics/analytics_dashboard.html", context)
 
 def save_preset(request):
     if request.method == "POST" and request.user.is_authenticated:
@@ -91,10 +91,10 @@ def save_preset(request):
             waste_type=request.POST.get('waste_type'),
             severity=request.POST.get('severity')
         )
-    return redirect('analytics:show_dashboard')
+    return redirect('analytics:show_analytics')
 
 def delete_preset(request, preset_id):
     if request.method == "POST" and request.user.is_authenticated:
         preset = get_object_or_404(DashboardPreset, id=preset_id, user=request.user)
         preset.delete()
-    return redirect('analytics:show_dashboard')
+    return redirect('analytics:show_analytics')

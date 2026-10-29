@@ -40,10 +40,10 @@ class DashboardTests(TestCase):
         # Test whether the dashboard loads successfully and passes correct context
             
         self.client.login(username='testuser', password='password123')
-        response = self.client.get(reverse('analytics:show_dashboard'))
+        response = self.client.get(reverse('analytics:show_analytics'))
             
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'analytics/dashboard.html')
+        self.assertTemplateUsed(response, 'analytics/analytics_dashboard.html')
             
         # Check whether context variables exist
         self.assertIn('waste_reports', response.context)
@@ -58,7 +58,7 @@ class DashboardTests(TestCase):
         self.client.login(username='testuser', password='password123')
         
         # Access the dashboard using the preset URL parameter
-        response = self.client.get(reverse('analytics:show_dashboard'), {'preset': self.preset.id})
+        response = self.client.get(reverse('analytics:show_analytics'), {'preset': self.preset.id})
         
         self.assertEqual(response.status_code, 200)
         
@@ -81,7 +81,7 @@ class DashboardTests(TestCase):
         response = self.client.post(reverse('analytics:save_preset'), data=form_data)
         
         # Check whether that the view redirects back to the dashboard
-        self.assertRedirects(response, reverse('analytics:show_dashboard'))
+        self.assertRedirects(response, reverse('analytics:show_analytics'))
         
         # Verify whether the preset was saved to the database
         preset_exists = DashboardPreset.objects.filter(name='Package Waste Filter', user=self.user).exists()
@@ -93,7 +93,7 @@ class DashboardTests(TestCase):
         
         response = self.client.post(reverse('analytics:delete_preset', args=[self.preset.id]))
         
-        self.assertRedirects(response, reverse('analytics:show_dashboard'))
+        self.assertRedirects(response, reverse('analytics:show_analytics'))
         self.assertFalse(DashboardPreset.objects.filter(id=self.preset.id).exists())
 
     def test_unauthorized_user_cannot_delete_other_presets(self):

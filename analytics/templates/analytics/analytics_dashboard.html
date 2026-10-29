@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/analytics_dashboard.css' %}">
 {% endblock extra_head %}
 
 {% block content %}
@@ -104,7 +104,7 @@
                 </ul>
                 
                 <div style="margin-top: 20px;">
-                <a href="{% url 'analytics:show_dashboard' %}" class="btn btn--primary">Clear Filters</a>
+                <a href="{% url 'analytics:show_analytics' %}" class="btn btn--primary">Clear Filters</a>
             </div>
             </div>
         </aside>
@@ -114,7 +114,6 @@
                 <button type="button" class="sidebar-toggle-btn" id="toggleSidebarBtn">
                     ☰
                 </button>
-                <form hx-get="/analytics/update-dashboard/" hx-target="#chart-grid"></form>
             </header>
 
             <!-- Summary Cards -->
