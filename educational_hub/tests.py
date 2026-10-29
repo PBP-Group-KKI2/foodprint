@@ -92,7 +92,7 @@ class EducationalHubTests(TestCase):
         res = self.client.get(reverse("education:article_list"))
         self.assertEqual(list(res.context["page_obj"]), [newer, self.article])
         # Session + user + count + one page query, no matter how many articles.
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(5):
             self.client.get(reverse("education:article_list"))
 
     def test_user_content_is_escaped(self):

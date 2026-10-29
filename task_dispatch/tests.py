@@ -219,3 +219,45 @@ class TaskDispatchTests(TestCase):
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, WasteReport.Status.REPORTED)
         self.assertContains(self.client.get(reverse("dispatch:pending_reports")), "Rice behind the canteen")
+
+    # ---------- AJAX claim + navbar ----------
+
+    def ajax_claim(self, report=None):
+        return self.client.post(
+            reverse("dispatch:claim_report", args=[(report or self.report).pk]),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+    def test_ajax_claim_returns_json(self):
+        self.make_report("Second pile")
+        self.login(self.official)
+        res = self.ajax_claim()
+        self.assertEqual(res.status_code, 201)
+        data = res.json()
+        task = CollectionTask.objects.get()
+        self.assertEqual(data["claimed"], self.report.pk)
+        self.assertEqual(data["task_url"], task.get_absolute_url())
+        self.assertEqual(data["pending_count"], 1)
+        self.assertEqual(data["open_task_count"], 1)
+
+    def test_ajax_claim_twice_returns_409(self):
+        self.login(self.official)
+        self.ajax_claim()
+        self.login(self.other_official)
+        res = self.ajax_claim()
+        self.assertEqual(res.status_code, 409)
+        self.assertIn("error", res.json())
+        self.assertEqual(CollectionTask.objects.get().official, self.official)
+
+    def test_ajax_claim_forbidden_for_citizens(self):
+        self.login(self.citizen)
+        self.assertEqual(self.ajax_claim().status_code, 403)
+        self.assertFalse(CollectionTask.objects.exists())
+
+    def test_navbar_tasks_link_only_for_dispatchers(self):
+        tasks_url = reverse("dispatch:pending_reports")
+        self.login(self.official)
+        self.assertContains(self.client.get(reverse("main:landing")), f'href="{tasks_url}"')
+        self.login(self.citizen)
+        res = self.client.get(reverse("main:report_map"))
+        self.assertNotContains(res, ">Tasks</a>")

@@ -1,4 +1,5 @@
 {% extends 'task_dispatch/_layout.html' %}
+{% load static %}
 
 {% block page_title %}Pending reports{% endblock page_title %}
 
@@ -8,8 +9,9 @@
     <h1 class="rp-title">Pending reports</h1>
     <p class="rp-subtitle">Waste sightings nobody has claimed yet. Claim one to put it on your task list.</p>
   </div>
-  <p class="rp-count">
-    {{ page_obj.paginator.count }} pending · {{ open_task_count }} open task{{ open_task_count|pluralize }} for you
+  <p class="rp-count" id="td-counts" aria-live="polite">
+    <span id="td-pending-count">{{ page_obj.paginator.count }}</span> pending ·
+    <span id="td-open-count">{{ open_task_count }}</span> open <span id="td-open-label">task{{ open_task_count|pluralize }}</span> for you
   </p>
 </header>
 
@@ -32,11 +34,13 @@
   </div>
 </form>
 
+<p class="td-flash" id="td-flash" role="status" aria-live="polite" hidden></p>
+
 <div class="rp-card rp-card--list">
   {% if page_obj.object_list %}
     <ul class="rp-list td-list">
       {% for report in page_obj %}
-        <li class="rp-item td-item">
+        <li class="rp-item td-item" data-report-id="{{ report.pk }}">
           <div class="td-item__main">
             <span class="rp-dot rp-dot--{{ report.severity|lower }}" aria-hidden="true"></span>
             <span class="rp-item__text">
@@ -49,7 +53,7 @@
               {% endif %}
             </span>
           </div>
-          <form method="post" action="{% url 'dispatch:claim_report' report.pk %}" class="td-item__claim">
+          <form method="post" action="{% url 'dispatch:claim_report' report.pk %}" class="td-item__claim" data-ajax-claim>
             {% csrf_token %}
             <button type="submit" class="rp-btn rp-btn--primary">Claim</button>
           </form>
@@ -75,3 +79,7 @@
   </nav>
 {% endif %}
 {% endblock dispatch_content %}
+
+{% block extra_js %}
+  <script src="{% static 'task_dispatch/js/task_dispatch.js' %}"></script>
+{% endblock extra_js %}

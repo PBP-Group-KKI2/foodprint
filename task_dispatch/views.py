@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Case, IntegerField, Q, Value, When
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
@@ -40,6 +41,20 @@ def dispatcher_required(view):
             raise PermissionDenied("Only officials can manage collection tasks.")
         return view(request, *args, **kwargs)
     return login_required(wrapper)
+
+
+def _is_ajax(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _pending_count():
+    return WasteReport.objects.filter(
+        status=WasteReport.Status.REPORTED, task__isnull=True
+    ).count()
+
+
+def _open_task_count(user):
+    return user.collection_tasks.exclude(status=CollectionTask.Status.CLOSED).count()
 
 
 def _get_manageable_task(request, pk):
@@ -100,9 +115,7 @@ def pending_reports(request):
         "filter_form": filter_form if filter_form.is_bound else PendingFilterForm(),
         "page_obj": page_obj,
         "query_string": query.urlencode(),
-        "open_task_count": request.user.collection_tasks.exclude(
-            status=CollectionTask.Status.CLOSED
-        ).count(),
+        "open_task_count": _open_task_count(request.user),
     }
     return render(request, "task_dispatch/pending_list.html", context)
 
@@ -131,8 +144,29 @@ def my_tasks(request):
 @dispatcher_required
 @require_POST
 def claim_report(request, report_pk):
+    """Claim a pending report.
+
+    From the pending list this is called with AJAX (fetch) and answers with JSON,
+    so the row updates without reloading. Without JavaScript, or from the report
+    page, it is a normal form POST and redirects.
+    """
     report = get_object_or_404(WasteReport, pk=report_pk)
     task = CollectionTask.claim(report, request.user)
+
+    if _is_ajax(request):
+        counts = {
+            "pending_count": _pending_count(),
+            "open_task_count": _open_task_count(request.user),
+        }
+        if task is None:
+            return JsonResponse(
+                {"error": f"“{report.title}” was already claimed or is no longer pending.", **counts},
+                status=409,
+            )
+        return JsonResponse(
+            {"claimed": report.pk, "title": report.title, "task_url": task.get_absolute_url(), **counts},
+            status=201,
+        )
 
     if task is None:
         messages.error(request, f"“{report.title}” was already claimed or is no longer pending.")

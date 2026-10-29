@@ -97,3 +97,28 @@
   margin-top: 16px;
   color: var(--rp-muted);
 }
+
+/* ---------- AJAX claim feedback ---------- */
+.td-flash {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--rp-olive-100);
+  color: var(--rp-olive-700);
+  font-size: 0.95rem;
+}
+.td-flash--error { background: #f8e9e5; color: var(--rp-high); }
+.td-item--claimed { opacity: 0.75; }
+.td-item__open { white-space: nowrap; }
+
+/* ---------- Page-top flash messages (from base.html) on dispatch pages ---------- */
+.messages { padding-top: 16px; }
+.message {
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--rp-olive-100);
+  color: var(--rp-olive-700);
+  font-size: 0.95rem;
+}
+.message--error { background: #f8e9e5; color: var(--rp-high); }
