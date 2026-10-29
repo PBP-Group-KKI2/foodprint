@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <h1>Welcome Official</h1>
+        <p>Halo, <strong>{{ request.user.username }}</strong>!</p>
+        <p>Your email: {{ request.user.profile.email }}</p>
+        <p>You're logged in as (Role): Official/Government</p>
+
+        <hr>
+        <!-- Task Dispatch -->
+        <p><a href="{% url 'dispatch:pending_reports' %}">Pending reports</a> · <a href="{% url 'dispatch:my_tasks' %}">My tasks</a></p>
+        <p><a href="{% url 'main:update_profile' %}">Edit My Profile</a></p>
+    </div>
+</section>
+{% endblock %}

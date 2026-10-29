@@ -1,0 +1,60 @@
+{% extends 'task_dispatch/_layout.html' %}
+
+{% block page_title %}My tasks{% endblock page_title %}
+
+{% block dispatch_content %}
+<header class="rp-header">
+  <div>
+    <h1 class="rp-title">{% if show_closed %}Closed tasks{% else %}My tasks{% endif %}</h1>
+    <p class="rp-subtitle">
+      {% if show_closed %}
+        Reports you collected and closed.
+      {% else %}
+        Reports you claimed. Update them as the pickup goes on, then close them when the area is clean.
+      {% endif %}
+    </p>
+  </div>
+  {% if show_closed %}
+    <a href="{% url 'dispatch:my_tasks' %}" class="rp-btn">Show open tasks</a>
+  {% else %}
+    <a href="{% url 'dispatch:my_tasks' %}?show=closed" class="rp-btn">Show closed tasks</a>
+  {% endif %}
+</header>
+
+<div class="rp-card rp-card--list">
+  {% if tasks %}
+    <ul class="rp-list td-list">
+      {% for task in tasks %}
+        <li class="rp-item td-item">
+          <div class="td-item__main">
+            <span class="rp-dot rp-dot--{{ task.report.severity|lower }}" aria-hidden="true"></span>
+            <span class="rp-item__text">
+              <a href="{% url 'dispatch:task_detail' task.pk %}" class="rp-item__title td-item__link">{{ task.report.title }}</a>
+              <span class="rp-item__meta">
+                {% if show_closed %}
+                  Closed {{ task.closed_at|date:"j M Y" }}
+                {% elif task.scheduled_for %}
+                  Pickup {{ task.scheduled_for|date:"D, j M Y" }}
+                {% else %}
+                  No pickup date yet
+                {% endif %}
+                · claimed {{ task.claimed_at|timesince }} ago
+              </span>
+              {% if task.report.location_name or task.report.area_label %}
+                <span class="rp-item__place">{{ task.report.location_name }}{% if task.report.location_name and task.report.area_label %} · {% endif %}{{ task.report.area_label }}</span>
+              {% endif %}
+            </span>
+          </div>
+          <span class="td-status td-status--{{ task.status|lower }}">{{ task.get_status_display }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% elif show_closed %}
+    <p class="rp-empty">You haven't closed any tasks yet.</p>
+  {% else %}
+    <p class="rp-empty">
+      You have no open tasks. <a href="{% url 'dispatch:pending_reports' %}">Claim a pending report</a> to get started.
+    </p>
+  {% endif %}
+</div>
+{% endblock dispatch_content %}
