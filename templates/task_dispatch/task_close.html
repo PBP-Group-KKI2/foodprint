@@ -1,0 +1,32 @@
+{% extends 'task_dispatch/_layout.html' %}
+
+{% block page_title %}Close task{% endblock page_title %}
+
+{% block page_width %} rp-page--narrow{% endblock page_width %}
+
+{% block dispatch_content %}
+<p><a href="{% url 'dispatch:task_detail' task.pk %}" class="rp-back">&larr; Back to task</a></p>
+
+<div class="rp-card">
+  <h1 class="rp-title">Close task</h1>
+  <p class="rp-subtitle">
+    Closing marks “{{ task.report.title }}” as resolved on the map. This can't be undone.
+  </p>
+
+  <form method="post" class="rp-form td-form">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="rp-field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<p class="rp-error">{{ error }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="rp-actions">
+      <button type="submit" class="rp-btn rp-btn--primary">Close and resolve</button>
+      <a href="{% url 'dispatch:task_detail' task.pk %}" class="rp-btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock dispatch_content %}

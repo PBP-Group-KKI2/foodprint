@@ -1,0 +1,99 @@
+/* ============================================================
+   Task Dispatch
+   Builds on the rp- classes from Reporting & Mapping (styles.css).
+   All classes here are prefixed td-.
+   ============================================================ */
+
+/* tabs */
+.td-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--rp-border);
+}
+.td-tab {
+  padding: 10px 14px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  color: var(--rp-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+.td-tab:hover { color: var(--rp-olive-700); }
+.td-tab--active { color: var(--rp-olive-900); border-bottom-color: var(--rp-olive-700); }
+
+/* filters */
+.td-filters {
+  display: grid;
+  grid-template-columns: 2fr repeat(4, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+.td-filters__actions { display: flex; gap: 8px; }
+@media (max-width: 960px) {
+  .td-filters { grid-template-columns: 1fr 1fr; }
+  .td-filters__search, .td-filters__actions { grid-column: 1 / -1; }
+}
+@media (max-width: 520px) {
+  .td-filters { grid-template-columns: 1fr; }
+}
+
+/* lists */
+.td-list { max-height: none; }
+.td-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 4px;
+}
+.td-item__main { display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; }
+.td-item__main .rp-dot { margin-top: 5px; }
+.td-item__link { color: var(--rp-olive-900); text-decoration: none; }
+.td-item__link:hover { text-decoration: underline; }
+.td-item__claim { margin: 0; flex-shrink: 0; }
+@media (max-width: 520px) {
+  .td-item { flex-direction: column; align-items: stretch; }
+  .td-item__claim .rp-btn { width: 100%; }
+}
+
+/* task status badges */
+.td-status {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.td-status--claimed { background: #fbefd6; color: #8a5d0e; }
+.td-status--in_progress { background: #e3ecf7; color: #2d5487; }
+.td-status--closed { background: var(--rp-olive-100); color: var(--rp-olive-700); }
+
+/* detail */
+.td-facts { margin-top: 20px; }
+.td-section-title { font-size: 0.95rem; margin: 20px 0 0; color: var(--rp-olive-900); }
+.td-text { margin-top: 6px; }
+/* styles.css covers text inputs, selects and textareas but not date inputs */
+.td-form input[type="date"] {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 9px 12px;
+  border: 1px solid var(--rp-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--rp-ink);
+}
+
+/* pagination */
+.td-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  color: var(--rp-muted);
+}

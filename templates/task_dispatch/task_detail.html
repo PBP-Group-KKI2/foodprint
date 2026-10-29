@@ -1,0 +1,52 @@
+{% extends 'task_dispatch/_layout.html' %}
+
+{% block page_title %}{{ task.report.title }}{% endblock page_title %}
+
+{% block page_width %} rp-page--narrow{% endblock page_width %}
+
+{% block dispatch_content %}
+<article class="rp-card">
+  <header class="rp-detail__header">
+    <div>
+      <h1 class="rp-title">{{ task.report.title }}</h1>
+      <p class="rp-subtitle">
+        Claimed by {{ task.official.username }} · {{ task.claimed_at|date:"j M Y, H:i" }}
+      </p>
+    </div>
+    <span class="td-status td-status--{{ task.status|lower }}">{{ task.get_status_display }}</span>
+  </header>
+
+  <dl class="rp-detail__facts td-facts">
+    <div><dt>Pickup date</dt><dd>{{ task.scheduled_for|date:"D, j M Y"|default:"Not set" }}</dd></div>
+    <div><dt>Severity</dt><dd><span class="rp-dot rp-dot--{{ task.report.severity|lower }}"></span> {{ task.report.get_severity_display }}</dd></div>
+    <div><dt>Type</dt><dd>{{ task.report.get_waste_type_display }}</dd></div>
+    {% if task.report.location_name %}<div><dt>Place</dt><dd>{{ task.report.location_name }}</dd></div>{% endif %}
+    {% if task.report.area_label %}<div><dt>Area</dt><dd>{{ task.report.area_label }}</dd></div>{% endif %}
+    <div><dt>Reported by</dt><dd>{{ task.report.reporter.username }}</dd></div>
+    {% if task.closed_at %}<div><dt>Closed</dt><dd>{{ task.closed_at|date:"j M Y, H:i" }}</dd></div>{% endif %}
+  </dl>
+
+  {% if task.notes %}
+    <h2 class="td-section-title">Notes</h2>
+    <p class="rp-detail__description td-text">{{ task.notes|linebreaksbr }}</p>
+  {% endif %}
+
+  {% if task.closing_note %}
+    <h2 class="td-section-title">What was done</h2>
+    <p class="rp-detail__description td-text">{{ task.closing_note|linebreaksbr }}</p>
+  {% endif %}
+
+  <div class="rp-actions">
+    <a href="{% url 'main:report_detail' task.report.pk %}" class="rp-btn">View report on map</a>
+    {% if can_manage and task.is_open %}
+      <a href="{% url 'dispatch:task_update' task.pk %}" class="rp-btn">Update</a>
+      <a href="{% url 'dispatch:task_close' task.pk %}" class="rp-btn rp-btn--primary">Close task</a>
+      <form method="post" action="{% url 'dispatch:task_release' task.pk %}"
+            onsubmit="return confirm('Release this report? It goes back to the pending list.');">
+        {% csrf_token %}
+        <button type="submit" class="rp-btn rp-btn--danger">Release</button>
+      </form>
+    {% endif %}
+  </div>
+</article>
+{% endblock dispatch_content %}
