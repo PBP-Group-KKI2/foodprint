@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
+    'educational_hub',
+    'task_dispatch',
+    'analytics',
 ]
 
 MIDDLEWARE = [

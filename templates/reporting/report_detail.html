@@ -31,6 +31,8 @@
       <div><dt>Type</dt><dd>{{ report.get_waste_type_display }}</dd></div>
       <div><dt>Severity</dt><dd><span class="rp-dot rp-dot--{{ report.severity|lower }}"></span> {{ report.get_severity_display }}</dd></div>
       {% if report.location_name %}<div><dt>Place</dt><dd>{{ report.location_name }}</dd></div>{% endif %}
+      {% if report.district %}<div><dt>District</dt><dd>{{ report.district }}</dd></div>{% endif %}
+      {% if report.city %}<div><dt>City</dt><dd>{{ report.city }}</dd></div>{% endif %}
       <div><dt>Coordinates</dt><dd>{{ report.latitude|floatformat:5 }}, {{ report.longitude|floatformat:5 }}</dd></div>
     </dl>
 
@@ -38,7 +40,7 @@
       <p class="rp-detail__description">{{ report.description|linebreaksbr }}</p>
     {% endif %}
 
-    {% if is_owner %}
+    {% if can_manage %}
       <div class="rp-actions">
         <a href="{% url 'main:report_update' report.pk %}" class="rp-btn">Edit</a>
         <form method="post" action="{% url 'main:report_delete' report.pk %}"
@@ -48,6 +50,8 @@
         </form>
       </div>
     {% endif %}
+
+    {% include "task_dispatch/_report_task_panel.html" %}
   </article>
 </section>
 

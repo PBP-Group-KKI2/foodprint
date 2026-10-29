@@ -1,10 +1,8 @@
 from django import forms
-
-from .models import WasteReport
-from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Profile
+
+from .models import Profile, WasteReport
 
 
 class WasteReportForm(forms.ModelForm):
@@ -17,9 +15,15 @@ class WasteReportForm(forms.ModelForm):
             "waste_type",
             "severity",
             "location_name",
+            "city",
+            "district",
             "latitude",
             "longitude",
         ]
+        labels = {
+            "city": "City",
+            "district": "District (kecamatan)",
+        }
         widgets = {
             "title": forms.TextInput(
                 attrs={"placeholder": "e.g. Leftover rice dumped behind the canteen"}
@@ -29,6 +33,12 @@ class WasteReportForm(forms.ModelForm):
             ),
             "location_name": forms.TextInput(
                 attrs={"placeholder": "Optional landmark or address"}
+            ),
+            "city": forms.TextInput(
+                attrs={"placeholder": "Filled from the pin, e.g. Depok"}
+            ),
+            "district": forms.TextInput(
+                attrs={"placeholder": "Filled from the pin, e.g. Beji"}
             ),
             "latitude": forms.HiddenInput(),
             "longitude": forms.HiddenInput(),
@@ -49,6 +59,25 @@ class WasteReportForm(forms.ModelForm):
 
     def clean_longitude(self):
         return round(self.cleaned_data["longitude"], 6)
+
+    @staticmethod
+    def _tidy(value):
+        # "  jakarta   selatan " -> "jakarta selatan": one space, no edges,
+        # so the same place is always stored the same way for Analytics.
+        return " ".join(value.split())
+
+    def clean_city(self):
+        return self._tidy(self.cleaned_data.get("city", ""))
+
+    def clean_district(self):
+        return self._tidy(self.cleaned_data.get("district", ""))
+
+
+class WasteReportAdminForm(WasteReportForm):
+    """Same as WasteReportForm, plus Status, for admins on the edit page."""
+
+    class Meta(WasteReportForm.Meta):
+        fields = WasteReportForm.Meta.fields + ["status"]
 
 
 class ReportFilterForm(forms.Form):
@@ -72,7 +101,25 @@ class ReportFilterForm(forms.Form):
         required=False,
         choices=[("", "Any status")] + list(WasteReport.Status.choices),
     )
+    city = forms.ChoiceField(required=False, label="City")
+    district = forms.ChoiceField(required=False, label="District")
     mine = forms.BooleanField(required=False, label="Only my reports")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Dropdowns list only the cities/districts that have reports.
+        self.fields["city"].choices = [("", "All cities")] + self._distinct("city")
+        self.fields["district"].choices = [("", "All districts")] + self._distinct("district")
+
+    @staticmethod
+    def _distinct(field):
+        values = (
+            WasteReport.objects.exclude(**{field: ""})
+            .values_list(field, flat=True)
+            .distinct()
+            .order_by(field)
+        )
+        return [(v, v) for v in values]
 
 # ============================================================
 # PROFILE

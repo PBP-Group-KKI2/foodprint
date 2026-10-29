@@ -12,8 +12,11 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_protect
 
-from .forms import ReportFilterForm, WasteReportForm, ExtendedRegisterForm
+from .forms import ReportFilterForm, WasteReportForm, WasteReportAdminForm, ExtendedRegisterForm
 from .models import WasteReport, Profile
+
+from django.utils.http import url_has_allowed_host_and_scheme
+from rewards.views import award_points
 
 
 def show_landing(request):
@@ -105,7 +108,7 @@ def _form_errors(form):
 
 
 def _filtered_reports(request):
-    """Apply the filter form (search, type, severity, status, mine) to the queryset."""
+    """Apply the filter form (search, type, severity, status, city, district, mine)."""
     reports = WasteReport.objects.select_related("reporter")
     filter_form = ReportFilterForm(request.GET or None)
 
@@ -116,6 +119,8 @@ def _filtered_reports(request):
                 Q(title__icontains=data["q"])
                 | Q(description__icontains=data["q"])
                 | Q(location_name__icontains=data["q"])
+                | Q(city__icontains=data["q"])
+                | Q(district__icontains=data["q"])
             )
         if data["waste_type"]:
             reports = reports.filter(waste_type=data["waste_type"])
@@ -123,15 +128,23 @@ def _filtered_reports(request):
             reports = reports.filter(severity=data["severity"])
         if data["status"]:
             reports = reports.filter(status=data["status"])
+        if data["city"]:
+            reports = reports.filter(city=data["city"])
+        if data["district"]:
+            reports = reports.filter(district=data["district"])
         if data["mine"] and request.user.is_authenticated:
             reports = reports.filter(reporter=request.user)
 
     return reports, filter_form
 
+def _can_manage(user, report):
+    """The reporter, or an admin (staff), may edit or delete a report."""
+    return report.is_owned_by(user) or (user.is_authenticated and user.is_staff)
 
-def _get_owned_report(request, pk):
+
+def _get_manageable_report(request, pk):
     report = get_object_or_404(WasteReport, pk=pk)
-    if not report.is_owned_by(request.user):
+    if not _can_manage(request.user, report):
         raise PermissionDenied("You can only change your own reports.")
     return report
 
@@ -178,20 +191,23 @@ def report_create(request):
     report = form.save(commit=False)
     report.reporter = request.user
     report.save()
+    award_points(request.user)          # +5 points
     return JsonResponse({"report": report.to_dict(request.user)}, status=201)
 
 
 @require_GET
 def report_detail(request, pk):
     report = get_object_or_404(WasteReport.objects.select_related("reporter"), pk=pk)
-    context = {"report": report, "is_owner": report.is_owned_by(request.user)}
+    context = {"report": report, "can_manage": _can_manage(request.user, report)}
     return render(request, "reporting/report_detail.html", context)
 
 
 @login_required
 def report_update(request, pk):
-    report = _get_owned_report(request, pk)
-    form = WasteReportForm(request.POST or None, instance=report)
+    report = _get_manageable_report(request, pk)
+    # Admins also get the Status field, so they can mark reports as resolved.
+    form_class = WasteReportAdminForm if request.user.is_staff else WasteReportForm
+    form = form_class(request.POST or None, instance=report)
 
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -204,7 +220,7 @@ def report_update(request, pk):
 @login_required
 @require_POST
 def report_delete(request, pk):
-    report = _get_owned_report(request, pk)
+    report = _get_manageable_report(request, pk)
     report_id = report.pk
     report.delete()
 
@@ -323,11 +339,13 @@ def register_view(request):
             
             selected_role = form.cleaned_data.get('role')
             user_email = form.cleaned_data.get('email')
+            point_deposit = form.cleaned_data.get('point_deposit')  #store reward points
             
             Profile.objects.create(
                 user=user,
                 role=selected_role,
-                email=user_email
+                email=user_email,
+                point=point_deposit,
             )
             
             login(request, user)
@@ -337,3 +355,25 @@ def register_view(request):
         form = ExtendedRegisterForm()
         
     return render(request, 'registration/register.html', {'form': form})
+
+# ============================================================
+# REWARD
+# ============================================================
+
+@login_required
+def show_reward(request):
+    profile = get_object_or_404(Profile, user=request.user)
+    return render(request, "reward.html", {"profile": profile})
+
+
+@login_required
+@require_POST
+def toggle_rank(request):
+    profile = get_object_or_404(Profile, user=request.user)
+    profile.show_rank = not profile.show_rank
+    profile.save(update_fields=["show_rank"])
+
+    next_url = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = "main:landing"
+    return redirect(next_url)

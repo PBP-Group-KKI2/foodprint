@@ -6,13 +6,15 @@
       <span class="rp-item__meta">
         {{ report.get_waste_type_display }} · {{ report.get_severity_display }} · {{ report.created_at|timesince }} ago
       </span>
-      {% if report.location_name %}<span class="rp-item__place">{{ report.location_name }}</span>{% endif %}
+      {% if report.location_name or report.area_label %}
+        <span class="rp-item__place">{{ report.location_name }}{% if report.location_name and report.area_label %} · {% endif %}{{ report.area_label }}</span>
+      {% endif %}
     </span>
     <span class="rp-status rp-status--{{ report.status|lower }}">{{ report.get_status_display }}</span>
   </button>
   <div class="rp-item__actions">
     <a href="{% url 'main:report_detail' report.pk %}">Details</a>
-    {% if user.is_authenticated and user.pk == report.reporter_id %}
+    {% if user.is_authenticated and user.pk == report.reporter_id or user.is_staff %}
       <a href="{% url 'main:report_update' report.pk %}">Edit</a>
       <button type="button" class="rp-link rp-link--danger" data-delete-url="{% url 'main:report_delete' report.pk %}">Delete</button>
     {% endif %}

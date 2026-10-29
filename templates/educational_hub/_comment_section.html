@@ -1,0 +1,51 @@
+{# With HTMX, posting a comment replaces this whole section with the server's new copy. #}
+<section id="comments" class="educational-hub__comments" aria-labelledby="educational-hub-comments-title">
+  <h2 class="educational-hub__comments-title" id="educational-hub-comments-title">
+    Comments <span class="educational-hub__comments-count">{{ comments|length }}</span>
+  </h2>
+
+  {% if comment_status %}
+    <p class="educational-hub__notice" role="status">{{ comment_status }}</p>
+  {% endif %}
+
+  {% if comments %}
+    <ol class="educational-hub__comment-list">
+      {% for comment in comments %}
+        <li class="educational-hub__comment">
+          <p class="educational-hub__comment-meta">
+            <span class="educational-hub__author">{{ comment.author.username }}</span>
+            {% if comment.author_id == article.author_id %}<span class="educational-hub__role">Author</span>{% endif %}
+            <time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:"j M Y, H:i" }}</time>
+          </p>
+          <p class="educational-hub__comment-body">{{ comment.content|linebreaksbr }}</p>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="educational-hub__muted">No comments yet. Start the conversation.</p>
+  {% endif %}
+
+  {% if user.is_authenticated %}
+    <form method="post"
+          action="{% url 'education:comment_create' article.pk %}"
+          class="educational-hub__comment-form"
+          hx-post="{% url 'education:comment_create' article.pk %}"
+          hx-target="#comments"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find button">
+      {% csrf_token %}
+      {% for error in comment_form.non_field_errors %}<p class="educational-hub__error">{{ error }}</p>{% endfor %}
+      <div class="educational-hub__field">
+        <label for="{{ comment_form.content.id_for_label }}">{{ comment_form.content.label }}</label>
+        {{ comment_form.content }}
+        {% for error in comment_form.content.errors %}<p class="educational-hub__error">{{ error }}</p>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn--primary">Post comment</button>
+    </form>
+  {% else %}
+    <p class="educational-hub__muted">
+      <a href="{% url 'main:login' %}?next={{ request.path|urlencode }}" class="educational-hub__text-link">Log in</a>
+      to join the discussion.
+    </p>
+  {% endif %}
+</section>

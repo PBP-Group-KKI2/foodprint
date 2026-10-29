@@ -144,3 +144,108 @@ class ReportingTests(TestCase):
         self.client.login(username="alice", password="pass12345")
         res = self.client.get(reverse("main:report_delete", args=[self.report.pk]))
         self.assertEqual(res.status_code, 405)  
+
+
+class ReportAreaTests(TestCase):
+    """City / district (kecamatan) on waste reports."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("dina", password="pass12345")
+        self.client.login(username="dina", password="pass12345")
+        self.data = {
+            "title": "Rice near station",
+            "waste_type": "FOOD",
+            "severity": "HIGH",
+            "latitude": "-6.3608",
+            "longitude": "106.8312",
+            "city": "  Depok ",
+            "district": "Beji",
+        }
+
+    def test_create_saves_city_and_district(self):
+        res = self.client.post(reverse("main:report_create"), self.data, **AJAX)
+        self.assertEqual(res.status_code, 201)
+        body = res.json()["report"]
+        self.assertEqual(body["city"], "Depok")  # whitespace tidied
+        self.assertEqual(body["district"], "Beji")
+        report = WasteReport.objects.get(pk=body["id"])
+        self.assertEqual(report.area_label, "Beji, Depok")
+
+    def test_city_and_district_are_optional(self):
+        data = {**self.data, "city": "", "district": ""}
+        res = self.client.post(reverse("main:report_create"), data, **AJAX)
+        self.assertEqual(res.status_code, 201)
+
+    def test_filter_by_city_and_district(self):
+        make = WasteReport.objects.create
+        make(reporter=self.user, title="A", latitude=0, longitude=0, city="Depok", district="Beji")
+        make(reporter=self.user, title="B", latitude=0, longitude=0, city="Depok", district="Pancoran Mas")
+        make(reporter=self.user, title="C", latitude=0, longitude=0, city="Jakarta Selatan", district="Jagakarsa")
+        url = reverse("main:report_list_json")
+        self.assertEqual(self.client.get(url, {"city": "Depok"}).json()["count"], 2)
+        self.assertEqual(self.client.get(url, {"district": "Jagakarsa"}).json()["count"], 1)
+        self.assertEqual(self.client.get(url, {"q": "pancoran"}).json()["count"], 1)
+
+    def test_filter_dropdown_lists_existing_cities(self):
+        WasteReport.objects.create(reporter=self.user, title="A", latitude=0, longitude=0, city="Depok")
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, '<option value="Depok">Depok</option>', html=True)
+
+
+
+class ReportAdminPermissionTests(TestCase):
+    """Admins (staff) can edit, delete and resolve any report; others still can't."""
+
+    def setUp(self):
+        self.owner = User.objects.create_user("owner", password="pass12345")
+        self.admin = User.objects.create_user("boss", password="pass12345", is_staff=True)
+        self.other = User.objects.create_user("other", password="pass12345")
+        self.report = WasteReport.objects.create(
+            reporter=self.owner, title="Rice behind canteen", latitude=-6.36, longitude=106.82,
+        )
+        self.edit_url = reverse("main:report_update", args=[self.report.pk])
+        self.delete_url = reverse("main:report_delete", args=[self.report.pk])
+        self.edit_data = {
+            "title": "Rice behind canteen",
+            "waste_type": "FOOD",
+            "severity": "HIGH",
+            "latitude": "-6.36",
+            "longitude": "106.82",
+        }
+
+    def test_admin_can_delete_any_report(self):
+        self.client.login(username="boss", password="pass12345")
+        res = self.client.post(self.delete_url, **AJAX)
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(WasteReport.objects.filter(pk=self.report.pk).exists())
+
+    def test_admin_can_edit_and_resolve_any_report(self):
+        self.client.login(username="boss", password="pass12345")
+        res = self.client.post(self.edit_url, {**self.edit_data, "status": "RESOLVED"})
+        self.assertRedirects(res, reverse("main:report_detail", args=[self.report.pk]))
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, WasteReport.Status.RESOLVED)
+
+    def test_admin_sees_status_field_owner_does_not(self):
+        self.client.login(username="boss", password="pass12345")
+        self.assertContains(self.client.get(self.edit_url), 'name="status"')
+        self.client.login(username="owner", password="pass12345")
+        self.assertNotContains(self.client.get(self.edit_url), 'name="status"')
+
+    def test_owner_cannot_change_status(self):
+        self.client.login(username="owner", password="pass12345")
+        self.client.post(self.edit_url, {**self.edit_data, "status": "RESOLVED"})
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, WasteReport.Status.REPORTED)
+
+    def test_other_user_still_blocked(self):
+        self.client.login(username="other", password="pass12345")
+        self.assertEqual(self.client.get(self.edit_url).status_code, 403)
+        self.assertEqual(self.client.post(self.delete_url, **AJAX).status_code, 403)
+
+    def test_admin_sees_edit_and_delete_buttons(self):
+        self.client.login(username="boss", password="pass12345")
+        detail = self.client.get(reverse("main:report_detail", args=[self.report.pk]))
+        self.assertContains(detail, self.edit_url)
+        html = self.client.get(reverse("main:report_list_json")).json()["html"]
+        self.assertIn("data-delete-url", html)

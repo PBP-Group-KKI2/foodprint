@@ -37,9 +37,11 @@
         <ul class="navbar__links">
           {# Replace "#" with {% url '...' %} once each module's URLs exist #}
           <li><a href="{% url 'main:landing' %}" class="navbar__link navbar__link--active">Home</a></li>
-          <li><a href="{% url 'main:report_map' %}" class="navbar__link">Map</a></li>
-          <li><a href="#" class="navbar__link">Learn</a></li>
-          <li><a href="#" class="navbar__link">Rewards</a></li>
+          <li><a href="{% url 'main:report_map' %}" class="navbar__link">Reporting &amp; Mapping</a></li>
+          {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}" class="navbar__link">Tasks</a></li>{% endif %}
+          <li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link">Analytics</a></li>
+          <li><a href="{% url 'education:article_list' %}" class="navbar__link">Learn</a></li>
+          <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Rewards</a></li>
           <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Dashboard</a></li>
         </ul>
       </nav>
@@ -47,10 +49,22 @@
       <div class="navbar__actions">
         {% if user.is_authenticated %}
           <a href="{% url 'main:logout' %}" class="btn btn--outline navbar__cta">Log out</a>
-          <a href="{% url 'main:report_map' %}#rp-form-card" class="btn btn--outline navbar__cta">Report waste</a>
           <a href="{% url 'main:update_profile' %}" class="navbar__profile" title="Edit Profile ({{ user.username }})">
             {{ user.username|slice:":1"|upper }}
           </a>
+          {% if user.profile %}
+          <span class="navbar__username">{{ user.username }}</span>
+          {% if user.profile.show_rank %}
+            <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
+          {% endif %}
+          <form method="post" action="{% url 'main:toggle_rank' %}" class="rank-toggle">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="rank-toggle__btn">
+              {% if user.profile.show_rank %}Hide rank{% else %}Show rank{% endif %}
+            </button>
+          </form>
+        {% endif %}
         {% else %}
                 <a href="{% url 'main:login' %}" class="btn btn--outline navbar__cta">Log in</a>
         {% endif %}
@@ -65,13 +79,14 @@
     <nav id="mobile-menu" class="navbar__mobile" aria-label="Mobile" hidden>
       <ul class="navbar__mobile-links">
         <li><a href="{% url 'main:landing' %}">Home</a></li>
-        <li><a href="{% url 'main:report_map' %}">Map</a></li>
-        <li><a href="#">Learn</a></li>
-        <li><a href="#">Rewards</a></li>
+        <li><a href="{% url 'main:report_map' %}">Reporting &amp; Mapping</a></li>
+        {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}">Tasks</a></li>{% endif %}
+        <li><a href="{% url 'analytics:show_analytics' %}">Analytics</a></li>
+        <li><a href="{% url 'education:article_list' %}">Learn</a></li>
+        <li><a href="{% url 'main:show_reward' %}">Rewards</a></li>
         <li><a href="#">Dashboard</a></li>
         {% if user.is_authenticated %}
           <li><a href="{% url 'main:logout' %}">Log out</a></li>
-          <li><a href="{% url 'main:report_map' %}#rp-form-card">Report waste</a></li>
           <li><a href="{% url 'main:update_profile' %}">Edit Profile</a></li>
         {% else %}
               <li><a href="{% url 'main:login' %}">Log in</a></li>
@@ -322,25 +337,22 @@
             <p class="feature-card__text">File waste reports and see them pinned on a live map.</p>
           </a>
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'education:article_list' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-learn.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Educational Hub</h3>
             <p class="feature-card__text">Learn how to tell food waste types apart and sort them.</p>
-            <span class="badge">Coming soon</span>
           </a>
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'dispatch:pending_reports' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-dispatch.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Task Dispatch</h3>
             <p class="feature-card__text">Officials claim, update, and close pending reports.</p>
-            <span class="badge">Coming soon</span>
           </a>
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'analytics:show_analytics' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-dashboard.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Analytics &amp; Dashboards</h3>
             <p class="feature-card__text">Explore waste data and trends for planning and campaigns.</p>
-            <span class="badge">Coming soon</span>
           </a>
 
           <a href="#" class="feature-card">
@@ -391,16 +403,15 @@
         <div class="footer__col">
           <h3 class="footer__heading">Explore</h3>
           <ul>
-            <li><a href="{% url 'main:report_map' %}#rp-form-card">Report waste</a></li>
-            <li><a href="{% url 'main:report_map' %}">Waste map</a></li>
-            <li><a href="#">Learn</a></li>
+            <li><a href="{% url 'main:report_map' %}">Reporting &amp; Mapping</a></li>
+            <li><a href="{% url 'education:article_list' %}">Learn</a></li>
           </ul>
         </div>
         <div class="footer__col">
           <h3 class="footer__heading">For partners</h3>
           <ul>
-            <li><a href="#">Task dispatch</a></li>
-            <li><a href="#">Dashboard</a></li>
+            <li><a href="{% url 'dispatch:pending_reports' %}">Task dispatch</a></li>
+            <li><a href="{% url 'analytics:show_analytics' %}">Dashboard</a></li>
             <li><a href="#">Rewards</a></li>
           </ul>
         </div>

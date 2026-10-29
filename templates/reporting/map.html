@@ -42,7 +42,7 @@
             {% csrf_token %}
             {% include "reporting/_place_search.html" %}
             <p class="rp-hint" id="rp-location-hint">
-              Click the map to pin the location, or
+              Or click the map to pin the location, or
               <button type="button" class="rp-link" id="rp-locate">use my location</button>.
             </p>
             <p class="rp-error" data-error-for="latitude"></p>
@@ -74,6 +74,19 @@
               <p class="rp-error" data-error-for="location_name"></p>
             </div>
 
+            <div class="rp-field-row">
+              <div class="rp-field">
+                <label for="{{ report_form.city.id_for_label }}">City <span class="rp-optional">(auto)</span></label>
+                {{ report_form.city }}
+                <p class="rp-error" data-error-for="city"></p>
+              </div>
+              <div class="rp-field">
+                <label for="{{ report_form.district.id_for_label }}">District <span class="rp-optional">(auto)</span></label>
+                {{ report_form.district }}
+                <p class="rp-error" data-error-for="district"></p>
+              </div>
+            </div>
+
             <div class="rp-field">
               <label for="{{ report_form.description.id_for_label }}">Description <span class="rp-optional">(optional)</span></label>
               {{ report_form.description }}
@@ -102,6 +115,10 @@
             {{ filter_form.severity }}
           </div>
           {{ filter_form.status }}
+          <div class="rp-field-row">
+            {{ filter_form.city }}
+            {{ filter_form.district }}
+          </div>
           {% if user.is_authenticated %}
             <label class="rp-check">{{ filter_form.mine }} Only my reports</label>
           {% endif %}

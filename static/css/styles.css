@@ -421,6 +421,26 @@ button { font: inherit; cursor: pointer; }
   margin: 3rem auto 0;
 }
 
+/* Phones and small tablets: stack the text above the chart */
+@media (max-width: 768px) {
+  .problem-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  .problem-texts {
+    max-width: none;
+  }
+  .problem-paragraph {
+    text-align: left;   /* justify leaves big gaps in narrow columns */
+    margin-top: 1rem;
+  }
+  .chart-container {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+}
+
 /* =============================================================
    MISSION
    ============================================================= */
@@ -798,6 +818,14 @@ button { font: inherit; cursor: pointer; }
   .rp-layout { grid-template-columns: 1fr; }
   .rp-map-wrap { position: static; }
   .rp-map { height: 55vh; min-height: 320px; }
+}
+
+/* Phones: shorter map so the report form starts on the first screen */
+@media (max-width: 600px) {
+  .rp-page { padding: 20px 16px 40px; }
+  .rp-header { margin-bottom: 14px; }
+  .rp-map { height: 42vh; min-height: 260px; }
+  .rp-card { padding: 16px; }
 }
 
 /* legend */
@@ -1351,4 +1379,151 @@ alert--success {
     transform: translateY(0);
     opacity: 1;
   }
+}
+/* ============================================================
+   Auth & profile forms (login, register, profile update)
+   Moved from the unused style.css; uses this file's palette.
+   ============================================================ */
+.login-section {
+  padding: 4rem 0;
+  border-top: 1px solid var(--line);
+}
+.login-section .container { text-align: center; }
+.login-section h1 {
+  margin: 0.4rem 0 1.5rem;
+  font-family: var(--font-heading);
+  font-size: var(--fs-2xl);
+  color: var(--ink);
+}
+
+.project-form {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 1.5rem;
+}
+.login-section .project-form {
+  max-width: 400px;
+  margin-inline: auto;
+  text-align: left;
+}
+
+.form-group { margin-bottom: 1.25rem; }
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  font: inherit;
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--green-600);
+  box-shadow: 0 0 0 3px rgba(94, 111, 50, 0.18);
+}
+
+/* Messages above the form (e.g. "Account created") */
+.form-message {
+  margin: 0 0 0.75rem;
+  font-size: var(--fs-sm);
+  color: var(--green-700);
+}
+/* Errors inside the form (wrong password, field errors) */
+.project-form .form-message {
+  margin: 0.35rem 0 0;
+  color: #B42318;
+}
+
+.login-section button[type="submit"] {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--green-600);
+  color: var(--white);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.login-section button[type="submit"]:hover { background: var(--green-700); }
+.login-section p a {
+  color: var(--green-700);
+  font-weight: 600;
+}
+
+/* ============================================================ */
+/* REWARD                                                       */
+/* ============================================================ */
+:root{
+  --rw-brownDirt: #C74B14;
+  --rw-blueLeast: #258EFF;
+  --rw-redBlood: #FA0000;
+  --rw-greenPeace: #20D430;
+  --rw-goldShine: #FFFE91;
+}
+
+.navbar__username { font-weight: 600; }
+
+.rank-tag {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rank-tag--common { color: var(--rw-brownDirt); }
+.rank-tag--civic  { color: var(--rw-blueLeast); }   /* blue */
+
+.rank-toggle { margin: 0; }
+.rank-toggle__btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.progress {
+  position: relative;
+  width: 210px;
+  height: 30px;
+  background: #9cbab4;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress__fill {
+  width: 0%;
+  height: 100%;
+  background: #009579;
+  transition: all 0.2s;
+}
+
+.progress__text {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  font: bold 14px "Quicksand", sans-serif;
+  color: #ffffff;
 }

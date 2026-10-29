@@ -1,0 +1,16 @@
+{# Included on the report detail page. Only officials and staff see it. #}
+{% if user.is_staff or user.profile.role == 'OFFICIAL' %}
+  <div class="rp-actions">
+    {% if report.task %}
+      <p class="rp-hint">
+        Collection task: <strong>{{ report.task.get_status_display }}</strong>, claimed by {{ report.task.official.username }}.
+        <a href="{% url 'dispatch:task_detail' report.task.pk %}" class="rp-back">Open task &rarr;</a>
+      </p>
+    {% elif report.status == 'REPORTED' %}
+      <form method="post" action="{% url 'dispatch:claim_report' report.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="rp-btn rp-btn--primary">Claim for collection</button>
+      </form>
+    {% endif %}
+  </div>
+{% endif %}

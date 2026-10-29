@@ -1,0 +1,85 @@
+{% extends 'task_dispatch/_layout.html' %}
+{% load static %}
+
+{% block page_title %}Pending reports{% endblock page_title %}
+
+{% block dispatch_content %}
+<header class="rp-header">
+  <div>
+    <h1 class="rp-title">Pending reports</h1>
+    <p class="rp-subtitle">Waste sightings nobody has claimed yet. Claim one to put it on your task list.</p>
+  </div>
+  <p class="rp-count" id="td-counts" aria-live="polite">
+    <span id="td-pending-count">{{ page_obj.paginator.count }}</span> pending ·
+    <span id="td-open-count">{{ open_task_count }}</span> open <span id="td-open-label">task{{ open_task_count|pluralize }}</span> for you
+  </p>
+</header>
+
+<form method="get" class="rp-card td-filters" role="search">
+  <div class="rp-field td-filters__search">
+    <label for="{{ filter_form.q.id_for_label }}">{{ filter_form.q.label }}</label>
+    {{ filter_form.q }}
+  </div>
+  {% for field in filter_form %}
+    {% if field.name != 'q' %}
+      <div class="rp-field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+      </div>
+    {% endif %}
+  {% endfor %}
+  <div class="td-filters__actions">
+    <button type="submit" class="rp-btn rp-btn--primary">Apply</button>
+    {% if query_string %}<a href="{% url 'dispatch:pending_reports' %}" class="rp-btn">Reset</a>{% endif %}
+  </div>
+</form>
+
+<p class="td-flash" id="td-flash" role="status" aria-live="polite" hidden></p>
+
+<div class="rp-card rp-card--list">
+  {% if page_obj.object_list %}
+    <ul class="rp-list td-list">
+      {% for report in page_obj %}
+        <li class="rp-item td-item" data-report-id="{{ report.pk }}">
+          <div class="td-item__main">
+            <span class="rp-dot rp-dot--{{ report.severity|lower }}" aria-hidden="true"></span>
+            <span class="rp-item__text">
+              <a href="{% url 'main:report_detail' report.pk %}" class="rp-item__title td-item__link">{{ report.title }}</a>
+              <span class="rp-item__meta">
+                {{ report.get_waste_type_display }} · {{ report.get_severity_display }} severity · reported {{ report.created_at|timesince }} ago by {{ report.reporter.username }}
+              </span>
+              {% if report.location_name or report.area_label %}
+                <span class="rp-item__place">{{ report.location_name }}{% if report.location_name and report.area_label %} · {% endif %}{{ report.area_label }}</span>
+              {% endif %}
+            </span>
+          </div>
+          <form method="post" action="{% url 'dispatch:claim_report' report.pk %}" class="td-item__claim" data-ajax-claim>
+            {% csrf_token %}
+            <button type="submit" class="rp-btn rp-btn--primary">Claim</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% elif query_string %}
+    <p class="rp-empty">No pending reports match these filters.</p>
+  {% else %}
+    <p class="rp-empty">No pending reports right now. Everything has been claimed.</p>
+  {% endif %}
+</div>
+
+{% if page_obj.has_other_pages %}
+  <nav class="td-pagination" aria-label="Pages">
+    {% if page_obj.has_previous %}
+      <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" class="rp-btn">&larr; Previous</a>
+    {% endif %}
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" class="rp-btn">Next &rarr;</a>
+    {% endif %}
+  </nav>
+{% endif %}
+{% endblock dispatch_content %}
+
+{% block extra_js %}
+  <script src="{% static 'task_dispatch/js/task_dispatch.js' %}"></script>
+{% endblock extra_js %}
