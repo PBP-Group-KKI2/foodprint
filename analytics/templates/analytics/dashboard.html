@@ -1,45 +1,147 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ page_title }}</title>
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block extra_head %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-
-    <!-- Connect to styles.css file -->
+    
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-</head>
-<body>
-    <div class="dashboard-container">
+{% endblock extra_head %}
 
+{% block content %}
+    <div class="dashboard-container">
+        
+        <aside class="sidebar" id="dashboardSidebar">
+            <!-- Mobile Close Button -->
+            <button type="button" id="closeSidebarBtn" class="sidebar-close-btn" aria-label="Close Filters">&times;</button>
+            
+            <h2 class="section-title preset-title">Create Presets</h2>
+            <hr style="margin: 5px 0 20px; border: 1.5px solid white;">
+
+            <form action="{% url 'analytics:save_preset' %}" method="POST" class="preset-form">
+                {% csrf_token %}
+                
+                <div class="sidebar-form-container">
+                    <div>
+                        <p>Preset Name</p>
+                        <input type="text" name="name" placeholder="e.g, South Jakarta View" required>
+                    </div>
+                    
+                    <div>
+                        <p>City Filter</p>
+                        <select name="city">
+                            <option value="">All Cities</option>
+                            {% for city in available_cities %}
+                                <option value="{{ city }}">{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <p>District Filter</p>
+                        <select name="district">
+                            <option value="">All Districts</option>
+                            {% for district in available_districts %}
+                                <option value="{{ district }}">{{ district }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <p>Waste Type Filter</p>
+                        <select name="waste_type">
+                            <option value="">All Waste Types</option>
+                            <option value="FOOD">Food Waste</option>
+                            <option value="PACKAGING">Packaging Waste</option>
+                            <option value="MIXED">Mixed Waste</option>
+                            <option value="OTHER">Other Waste</option>
+
+                        </select>
+                    </div>
+
+                    <div>
+                        <p>Waste Severity Filter</p>
+                        <select name="severity">
+                            <option value="">All Severities</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn--light">Save Preset</button>
+            </form>
+
+            <div class="sidebar-preset-container">
+                <h3 class="section-title preset-title">Your Presets</h3>
+                <hr style="margin: 5px 0 20px; border: 1.5px solid var(--ink-soft);">
+
+                <ul class="preset-list">
+                    {% for preset in presets %}
+                        <li>
+                            <div class="preset-item">
+                                <span class="dot" aria-hidden="true"></span>
+                                <a href="?preset={{ preset.id }}">
+                                    {{ preset.name }}
+                                </a>
+                            </div>
+
+                            <form action="{% url 'analytics:delete_preset' preset.id %}" method="POST">
+                                {% csrf_token %}
+                                <button type="submit" title="Delete Preset" class="btn">Delete</button>
+                            </form>
+                            
+                            <hr style="margin: 5px 2px; border: 1px solid var(--ink-soft);;">
+                        </li>
+                    {% empty %}
+                        <li>No presets saved yet.</li>
+                    {% endfor %}
+                </ul>
+                
+                <div style="margin-top: 20px;">
+                <a href="{% url 'analytics:show_dashboard' %}" class="btn btn--primary">Clear Filters</a>
+            </div>
+            </div>
+        </aside>
+        
         <main class="main-content">
             <header>
+                <button type="button" class="sidebar-toggle-btn" id="toggleSidebarBtn">
+                    ☰
+                </button>
                 <form hx-get="/analytics/update-dashboard/" hx-target="#chart-grid"></form>
             </header>
 
             <!-- Summary Cards -->
             <div class="kpi-row">
-                <div class="kpi-card">Total Reports: 150</div>
+                <div class="kpi-card">Total Reports: {{ waste_reports }}</div>
+                <div class="kpi-card">Resolved: {{ resolved_reports }}</div>
             </div>
-
 
             <!-- Chart Canvases -->
              <div id="chart-grid">
                 <div class="chart-wrapper">
+                    <!--<h2>Total Waste Report by City</h2>-->
                     <canvas id="cityChartCanvas"></canvas>
                 </div>
                 <div class="chart-wrapper">
+                    <!--<h2>Total Waste Report by District</h2>-->
                     <canvas id="districtChartCanvas"></canvas>
                 </div>
                 <div class="chart-wrapper">
+                    <!--<h2>Percentage of Waste by Type</h2>-->
                     <canvas id="typeChartCanvas"></canvas>
                 </div>
                 <div class="chart-wrapper">
+                    <!--<h2>Serevities of Waste </h2>-->
                     <canvas id="severityChartCanvas"></canvas>
                 </div>
             </div>
-
         </main>
     </div>
 
@@ -55,9 +157,11 @@
 
     {{ severity_labels|json_script:"severity-data" }}
     {{ severity_values|json_script:"severity-values-data" }}
+{% endblock content %}
 
-    <!-- To show city, district, and severity charts-->
+{% block extra_js %}
     <script>
+        // For creating charts
         const cityLabels = JSON.parse(document.getElementById('city-data').textContent);
         const cityValues = JSON.parse(document.getElementById('city-values-data').textContent);
         const cityCtx = document.getElementById('cityChartCanvas').getContext('2d');
@@ -81,13 +185,23 @@
                 datasets: [{
                     label: 'Total Reports',
                     data: cityValues,
-                    backgroundColor: '#1976D2'
+                    backgroundColor: '#77894A',
+                    maxBarThickness: 40,
                 }]
             },
             options: {
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Total Waste Reports by City',
+                        font: {
+                            size: 16
+                        }
+                    }
+                }
             }
-        })
+        });
 
         window.districtChart = new Chart(districtCtx, {
             type: 'bar',
@@ -96,13 +210,23 @@
                 datasets: [{
                     label: 'Total Reports',
                     data: districtValues,
-                    backgroundColor: '#1976D2'
+                    backgroundColor: '#77894A',
+                    maxBarThickness: 40,
                 }]
             },
             options: {
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Total Waste Reports by District',
+                        font: {
+                            size: 16
+                        }
+                    }
+                }
             }
-        })
+        });
 
         window.typeChart = new Chart(typeCtx, {
             type: 'doughnut',
@@ -110,11 +234,31 @@
                 labels: typeLabels,
                 datasets: [{
                     data: typeValues,
-                    backgroundColor: ['#2E7D32', '#FFA000', '#D32F2F', '#757575']
+                    backgroundColor: ['#77894A', '#5E6F32', '#4A5A2A']
                 }]
             },
+            plugins: [ChartDataLabels],
             options: {
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Percentage of Waste by Type',
+                        font: { size: 16 }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 14 },
+                        formatter: (value, context) => {
+                            const dataset = context.chart.data.datasets[0].data;
+                            const total = dataset.reduce((acc, current) => acc + current, 0);
+                            
+                            if (total === 0 || value === 0) return '';
+                            const percentage = Math.round((value / total) * 100) + '%';
+                            return percentage;
+                        }
+                    }
+                }
             }
         });
 
@@ -125,14 +269,54 @@
                 datasets: [{
                     label: 'Report Severity',
                     data: severityValues,
-                    backgroundColor: ['#2E7D32', '#FFA000', '#D32F2F', '#757575']
+                    backgroundColor: ['#77894A', '#5E6F32', '#4A5A2A']
                 }]
             },
+            plugins: [ChartDataLabels],
             options: {
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Percentage of Waste by Serevity',
+                        font: { size: 16 }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 14 },
+                        formatter: (value, context) => {
+                            const dataset = context.chart.data.datasets[0].data;
+                            const total = dataset.reduce((acc, current) => acc + current, 0);
+                            
+                            if (total === 0 || value === 0) return '';
+                            const percentage = Math.round((value / total) * 100) + '%';
+                            return percentage;
+                        }
+                    }
+                }
             }
         });
-
     </script>
-</body>
-</html>
+
+    <script>
+        // For sidebar toggle button
+        document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
+            const sidebar = document.getElementById('dashboardSidebar');
+            sidebar.classList.toggle('collapsed');
+            
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 300);
+        });
+
+        // For sidebar mobile close button
+        document.getElementById('closeSidebarBtn').addEventListener('click', function() {
+            const sidebar = document.getElementById('dashboardSidebar');
+            sidebar.classList.add('collapsed');
+            
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 300);
+        });
+    </script>
+{% endblock extra_js %}
