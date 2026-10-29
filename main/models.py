@@ -109,8 +109,12 @@ class WasteReport(models.Model):
         }
 
 # ============================================================
-# PROFILE
+# PROFILE + REWARD
 # ============================================================
+POINTS_PER_POST = 5
+CIVIC_THRESHOLD = 100
+CRITICAL_THRESHOLD = 300
+CONCISE_THRESHOLD = 1000
 
 # mainApplication/models.py
 class Profile(models.Model):
@@ -126,3 +130,28 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"
+
+    RANK_LABELS = {
+        'COMMON': 'Common', 
+        'CIVIC': 'Civic',
+        'CRITICAL': 'Critical',
+        'CONCISE': 'Concise',
+    }
+    
+    points = models.PositiveIntegerField(default=0)
+    show_rank = models.BooleanField(default=True)
+
+    @property
+    def rank(self):
+        if self.points >= CONCISE_THRESHOLD:
+            return 'CONCISE'
+        elif self.points >= CRITICAL_THRESHOLD:
+            return 'CRITICAL'
+        elif self.points >= CIVIC_THRESHOLD:
+            return 'CIVIC'
+        else:
+            return 'COMMON'
+
+    @property
+    def rank_label(self):
+        return self.RANK_LABELS[self.rank]

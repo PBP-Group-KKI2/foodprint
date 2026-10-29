@@ -15,6 +15,9 @@ from django.views.decorators.csrf import csrf_protect
 from .forms import ReportFilterForm, WasteReportForm, WasteReportAdminForm, ExtendedRegisterForm
 from .models import WasteReport, Profile
 
+from django.utils.http import url_has_allowed_host_and_scheme
+from rewards.views import award_points
+
 
 def show_landing(request):
     last_login = request.COOKIES.get('last_login', 'No active login session / Cookie not found')
@@ -188,6 +191,7 @@ def report_create(request):
     report = form.save(commit=False)
     report.reporter = request.user
     report.save()
+    award_points(request.user)          # +5 points
     return JsonResponse({"report": report.to_dict(request.user)}, status=201)
 
 
@@ -293,11 +297,13 @@ def register_view(request):
             
             selected_role = form.cleaned_data.get('role')
             user_email = form.cleaned_data.get('email')
+            point_deposit = form.cleaned_data.get('point_deposit')  #store reward points
             
             Profile.objects.create(
                 user=user,
                 role=selected_role,
-                email=user_email
+                email=user_email,
+                point=point_deposit,
             )
             
             login(request, user)
@@ -307,3 +313,25 @@ def register_view(request):
         form = ExtendedRegisterForm()
         
     return render(request, 'registration/register.html', {'form': form})
+
+# ============================================================
+# REWARD
+# ============================================================
+
+@login_required
+def show_reward(request):
+    profile = get_object_or_404(Profile, user=request.user)
+    return render(request, "reward.html", {"profile": profile})
+
+
+@login_required
+@require_POST
+def toggle_rank(request):
+    profile = get_object_or_404(Profile, user=request.user)
+    profile.show_rank = not profile.show_rank
+    profile.save(update_fields=["show_rank"])
+
+    next_url = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = "main:landing"
+    return redirect(next_url)
