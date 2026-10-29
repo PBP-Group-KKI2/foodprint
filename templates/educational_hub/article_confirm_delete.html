@@ -1,0 +1,26 @@
+{% extends 'educational_hub/_layout.html' %}
+
+{% block page_title %}Delete article{% endblock page_title %}
+
+{% block hub_content %}
+<div class="container educational-hub__narrow">
+  <p><a href="{{ article.get_absolute_url }}" class="educational-hub__back">&larr; Back to article</a></p>
+
+  <section class="educational-hub__panel educational-hub__panel--danger">
+    <h1 class="section-title educational-hub__heading">Delete this article?</h1>
+    <p>
+      “<strong>{{ article.title }}</strong>” will be permanently deleted, along with its
+      {{ article.comment_count }} comment{{ article.comment_count|pluralize }},
+      {{ article.like_count }} like{{ article.like_count|pluralize }}, and
+      {{ article.favorite_count }} save{{ article.favorite_count|pluralize }}.
+      This cannot be undone.
+    </p>
+
+    <form method="post" class="educational-hub__form-actions">
+      {% csrf_token %}
+      <button type="submit" class="btn educational-hub__btn-danger educational-hub__btn-danger--solid">Yes, delete article</button>
+      <a href="{{ article.get_absolute_url }}" class="btn educational-hub__btn-secondary">Cancel</a>
+    </form>
+  </section>
+</div>
+{% endblock hub_content %}

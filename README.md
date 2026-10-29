@@ -99,6 +99,6 @@ Hopefully, if this ambitious project goes well, it should be ready and open to t
 *   **Reporting & Mapping:** CRUD on waste reports. Integrates the OpenStreetMap API to pin waste locations. Uses AJAX to submit reports without reloading the map.
 *   **Profile:** CRUD on user profiles. Handles authentication-based filtering to ensure officials, citizens, and organizations see appropriate dashboards.
 *   **Task Dispatch System:** CRUD on collection tasks. Allows waste management officials to claim, update, and close pending reports.
-*   **Educational Hub:** CRUD on waste categorization guides. Allows admins to post articles and users to filter public API/mock API data on global waste statistics.
+*   **Educational Hub:** CRUD on waste categorization guides. Allows logged-in users to post articles and users to filter public API/mock API data on global waste statistics.
 *   **Analytics & Dashboards:** CRUD on saved datasets or tracked metrics for environmental organizations. Uses HTMX/AJAX for dynamic chart updates.
 *   **Reward System:** CRUD on reward claims and discount coupons. Allows users to redeem points for local restaurant and store vouchers using AJAX for instant balance updates.

@@ -1,0 +1,72 @@
+{% extends 'educational_hub/_layout.html' %}
+
+{% block page_title %}{{ article.title }}{% endblock page_title %}
+{% block meta_description %}{{ article.excerpt }}{% endblock meta_description %}
+
+{% block hub_content %}
+<div class="container educational-hub__narrow">
+  <p><a href="{% url 'education:article_list' %}" class="educational-hub__back">&larr; All articles</a></p>
+
+  <article class="educational-hub__article">
+    <header class="educational-hub__article-header">
+      <span class="badge">{{ article.get_category_display }}</span>
+      <h1 class="educational-hub__article-title">{{ article.title }}</h1>
+      <p class="educational-hub__article-meta">
+        By <span class="educational-hub__author">{{ article.author.username }}</span>
+        {% if article.author_role_label %}<span class="educational-hub__role">{{ article.author_role_label }}</span>{% endif %}
+        <span aria-hidden="true">·</span>
+        <time datetime="{{ article.created_at|date:'c' }}">{{ article.created_at|date:"j M Y" }}</time>
+        {% if article.was_edited %}
+          <span aria-hidden="true">·</span>
+          <span>Updated <time datetime="{{ article.updated_at|date:'c' }}">{{ article.updated_at|date:"j M Y" }}</time></span>
+        {% endif %}
+      </p>
+      {% if article.summary %}<p class="educational-hub__article-summary">{{ article.summary }}</p>{% endif %}
+    </header>
+
+    {# |linebreaks escapes the text first, then wraps paragraphs, so user HTML is never rendered #}
+    <div class="educational-hub__article-body">
+      {{ article.content|linebreaks }}
+    </div>
+
+    <footer class="educational-hub__article-footer">
+      {% include 'educational_hub/_reaction_buttons.html' %}
+
+      {% if can_manage %}
+        <div class="educational-hub__manage">
+          <a href="{% url 'education:article_update' article.pk %}" class="btn educational-hub__btn-secondary">Edit article</a>
+          {# Opens the modal below; without JS it goes to the confirmation page. #}
+          <a href="{% url 'education:article_delete' article.pk %}"
+             class="btn educational-hub__btn-danger"
+             data-eh-open-dialog="educational-hub-delete-dialog"
+             aria-haspopup="dialog">Delete article</a>
+        </div>
+      {% endif %}
+    </footer>
+  </article>
+
+  {% if can_manage %}
+    <dialog id="educational-hub-delete-dialog" class="educational-hub__dialog" aria-labelledby="educational-hub-delete-title">
+      <div class="educational-hub__dialog-body">
+        <h2 class="educational-hub__dialog-title" id="educational-hub-delete-title">Delete this article?</h2>
+        <p>
+          “<strong>{{ article.title }}</strong>” will be permanently deleted, along with its
+          comments, likes, and saves. This cannot be undone.
+        </p>
+        <div class="educational-hub__form-actions">
+          <form method="post" action="{% url 'education:article_delete' article.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn educational-hub__btn-danger educational-hub__btn-danger--solid">Yes, delete article</button>
+          </form>
+          {# method="dialog" closes the modal without sending anything to the server #}
+          <form method="dialog">
+            <button type="submit" class="btn educational-hub__btn-secondary" autofocus>Cancel</button>
+          </form>
+        </div>
+      </div>
+    </dialog>
+  {% endif %}
+
+  {% include 'educational_hub/_comment_section.html' %}
+</div>
+{% endblock hub_content %}

@@ -38,7 +38,7 @@
           {# Replace "#" with {% url '...' %} once each module's URLs exist #}
           <li><a href="{% url 'main:landing' %}" class="navbar__link navbar__link--active">Home</a></li>
           <li><a href="{% url 'main:report_map' %}" class="navbar__link">Map</a></li>
-          <li><a href="#" class="navbar__link">Learn</a></li>
+          <li><a href="{% url 'education:article_list' %}" class="navbar__link">Learn</a></li>
           <li><a href="#" class="navbar__link">Rewards</a></li>
           <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Dashboard</a></li>
         </ul>
@@ -66,7 +66,7 @@
       <ul class="navbar__mobile-links">
         <li><a href="{% url 'main:landing' %}">Home</a></li>
         <li><a href="{% url 'main:report_map' %}">Map</a></li>
-        <li><a href="#">Learn</a></li>
+        <li><a href="{% url 'education:article_list' %}">Learn</a></li>
         <li><a href="#">Rewards</a></li>
         <li><a href="#">Dashboard</a></li>
         {% if user.is_authenticated %}
@@ -322,11 +322,10 @@
             <p class="feature-card__text">File waste reports and see them pinned on a live map.</p>
           </a>
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'education:article_list' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-learn.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Educational Hub</h3>
             <p class="feature-card__text">Learn how to tell food waste types apart and sort them.</p>
-            <span class="badge">Coming soon</span>
           </a>
 
           <a href="#" class="feature-card">
@@ -393,7 +392,7 @@
           <ul>
             <li><a href="{% url 'main:report_map' %}#rp-form-card">Report waste</a></li>
             <li><a href="{% url 'main:report_map' %}">Waste map</a></li>
-            <li><a href="#">Learn</a></li>
+            <li><a href="{% url 'education:article_list' %}">Learn</a></li>
           </ul>
         </div>
         <div class="footer__col">
