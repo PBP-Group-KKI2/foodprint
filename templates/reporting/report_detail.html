@@ -40,7 +40,7 @@
       <p class="rp-detail__description">{{ report.description|linebreaksbr }}</p>
     {% endif %}
 
-    {% if is_owner %}
+    {% if can_manage %}
       <div class="rp-actions">
         <a href="{% url 'main:report_update' report.pk %}" class="rp-btn">Edit</a>
         <form method="post" action="{% url 'main:report_delete' report.pk %}"

@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_protect
 
-from .forms import ReportFilterForm, WasteReportForm, ExtendedRegisterForm
+from .forms import ReportFilterForm, WasteReportForm, WasteReportAdminForm, ExtendedRegisterForm
 from .models import WasteReport, Profile
 
 
@@ -134,9 +134,14 @@ def _filtered_reports(request):
 
     return reports, filter_form
 
-def _get_owned_report(request, pk):
+def _can_manage(user, report):
+    """The reporter, or an admin (staff), may edit or delete a report."""
+    return report.is_owned_by(user) or (user.is_authenticated and user.is_staff)
+
+
+def _get_manageable_report(request, pk):
     report = get_object_or_404(WasteReport, pk=pk)
-    if not report.is_owned_by(request.user):
+    if not _can_manage(request.user, report):
         raise PermissionDenied("You can only change your own reports.")
     return report
 
@@ -189,14 +194,16 @@ def report_create(request):
 @require_GET
 def report_detail(request, pk):
     report = get_object_or_404(WasteReport.objects.select_related("reporter"), pk=pk)
-    context = {"report": report, "is_owner": report.is_owned_by(request.user)}
+    context = {"report": report, "can_manage": _can_manage(request.user, report)}
     return render(request, "reporting/report_detail.html", context)
 
 
 @login_required
 def report_update(request, pk):
-    report = _get_owned_report(request, pk)
-    form = WasteReportForm(request.POST or None, instance=report)
+    report = _get_manageable_report(request, pk)
+    # Admins also get the Status field, so they can mark reports as resolved.
+    form_class = WasteReportAdminForm if request.user.is_staff else WasteReportForm
+    form = form_class(request.POST or None, instance=report)
 
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -209,7 +216,7 @@ def report_update(request, pk):
 @login_required
 @require_POST
 def report_delete(request, pk):
-    report = _get_owned_report(request, pk)
+    report = _get_manageable_report(request, pk)
     report_id = report.pk
     report.delete()
 

@@ -421,6 +421,26 @@ button { font: inherit; cursor: pointer; }
   margin: 3rem auto 0;
 }
 
+/* Phones and small tablets: stack the text above the chart */
+@media (max-width: 768px) {
+  .problem-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  .problem-texts {
+    max-width: none;
+  }
+  .problem-paragraph {
+    text-align: left;   /* justify leaves big gaps in narrow columns */
+    margin-top: 1rem;
+  }
+  .chart-container {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+}
+
 /* =============================================================
    MISSION
    ============================================================= */
@@ -798,6 +818,14 @@ button { font: inherit; cursor: pointer; }
   .rp-layout { grid-template-columns: 1fr; }
   .rp-map-wrap { position: static; }
   .rp-map { height: 55vh; min-height: 320px; }
+}
+
+/* Phones: shorter map so the report form starts on the first screen */
+@media (max-width: 600px) {
+  .rp-page { padding: 20px 16px 40px; }
+  .rp-header { margin-bottom: 14px; }
+  .rp-map { height: 42vh; min-height: 260px; }
+  .rp-card { padding: 16px; }
 }
 
 /* legend */
