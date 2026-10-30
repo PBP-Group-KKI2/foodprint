@@ -36,27 +36,18 @@
 
     <div class="navbar__actions">
       {% if user.is_authenticated %}
-        {# Account controls share one menu so the bar stays readable with every role's links #}
-        <details class="navbar__account">
-          <summary class="navbar__account-toggle" aria-label="Account menu for {{ user.username }}">
-            <span class="navbar__profile" aria-hidden="true">{{ user.username|slice:":1"|upper }}</span>
-            {% if user.profile.show_rank %}
-              <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
-            {% endif %}
-          </summary>
-          <div class="navbar__account-menu">
-            <p class="navbar__account-name">{{ user.username }}</p>
-            <a href="{% url 'main:update_profile' %}" class="navbar__account-item">Edit profile</a>
-            <form method="post" action="{% url 'main:toggle_rank' %}" class="rank-toggle">
-              {% csrf_token %}
-              <input type="hidden" name="next" value="{{ request.path }}">
-              <button type="submit" class="navbar__account-item">
-                {% if user.profile.show_rank %}Hide rank{% else %}Show rank{% endif %}
-              </button>
-            </form>
-            <a href="{% url 'main:logout' %}" class="navbar__account-item">Log out</a>
-          </div>
-        </details>
+        <a href="{% url 'main:logout' %}" class="btn btn--outline navbar__cta">Log out</a>
+        <a href="{% url 'main:update_profile' %}" class="navbar__profile" title="Edit Profil ({{ user.username }})">{{ user.username|slice:":1"|upper }}</a>
+        {% if user.profile.show_rank %}
+          <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
+        {% endif %}
+        <form method="post" action="{% url 'main:toggle_rank' %}" class="rank-toggle">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" class="rank-toggle__btn">
+            {% if user.profile.show_rank %}Hide rank{% else %}Show rank{% endif %}
+          </button>
+        </form>
       {% else %}
         <a href="{% url 'main:login' %}" class="btn btn--outline navbar__cta">Log in</a>
       {% endif %}
