@@ -1,0 +1,9 @@
+[run]
+source = educational_hub
+omit =
+    educational_hub/migrations/*
+    educational_hub/tests*.py
+
+[report]
+show_missing = true
+skip_covered = false

@@ -485,3 +485,66 @@ class SecurityDecoratorTests(TestCase):
             self.client.post(self.like_url)
         res = self.client.post(self.like_url, HTTP_REFERER="https://evil.example/")
         self.assertRedirects(res, reverse("education:article_list"), fetch_redirect_response=False)
+
+
+# ---------- edge cases and negative paths ----------
+
+class EdgeCaseTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.alice = User.objects.create_user("alice", password="pass12345")
+        self.article = Article.objects.create(author=self.alice, title="Composting basics", content=LONG_TEXT)
+        self.client.force_login(self.alice)
+        self.comment_url = reverse("education:comment_create", args=[self.article.pk])
+
+    def test_title_shorter_than_five_characters_is_rejected(self):
+        res = self.client.post(reverse("education:article_create"), {
+            "title": "Tip", "category": "BASICS", "summary": "", "content": LONG_TEXT,
+        })
+        self.assertContains(res, "Title must be at least 5 characters.")
+        self.assertFalse(Article.objects.filter(title="Tip").exists())
+
+    def test_comment_length_limits(self):
+        for content, error in (("a", "Comment is too short."), ("a" * 1001, "1000 characters or fewer")):
+            with self.subTest(length=len(content)):
+                cache.clear()
+                res = self.client.post(self.comment_url, {"content": content}, **HTMX)
+                self.assertContains(res, error)
+        self.assertEqual(Comment.objects.count(), 0)
+
+    def test_invalid_comment_without_htmx_redirects_with_error(self):
+        res = self.client.post(self.comment_url, {"content": "a"}, follow=True)
+        self.assertRedirects(res, f"{self.article.get_absolute_url()}#comments")
+        self.assertContains(res, "Comment is too short.")
+
+    def test_simultaneous_duplicate_publish_shows_form_error(self):
+        # Two identical submissions can both pass clean_title; the database constraint stops the second.
+        with mock.patch.object(Article, "save", side_effect=IntegrityError):
+            res = self.client.post(reverse("education:article_create"), {
+                "title": "Racing duplicate", "category": "BASICS", "summary": "", "content": LONG_TEXT,
+            })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "You already published an article with this title.")
+
+    def test_rate_limit_redirects_back_to_same_site_referer(self):
+        like_url = reverse("education:toggle_like", args=[self.article.pk])
+        limit, _ = LIKE_RATE_LIMIT
+        for _ in range(limit):
+            self.client.post(like_url)
+        referer = f"http://testserver{self.article.get_absolute_url()}"
+        res = self.client.post(like_url, HTTP_REFERER=referer)
+        self.assertRedirects(res, referer)
+
+    def test_rate_limit_survives_window_expiring_between_calls(self):
+        like_url = reverse("education:toggle_like", args=[self.article.pk])
+        with mock.patch("educational_hub.decorators.cache.incr", side_effect=ValueError):
+            self.assertEqual(self.client.post(like_url, **HTMX).status_code, 200)
+
+    def test_admin_labels(self):
+        comment = Comment.objects.create(article=self.article, author=self.alice, content="Nice guide")
+        like = Like.objects.create(article=self.article, user=self.alice)
+        favorite = Favorite.objects.create(article=self.article, user=self.alice)
+        self.assertEqual(str(self.article), "Composting basics")
+        self.assertEqual(str(comment), "alice on Composting basics")
+        self.assertEqual(str(like), "alice likes Composting basics")
+        self.assertEqual(str(favorite), "alice saved Composting basics")

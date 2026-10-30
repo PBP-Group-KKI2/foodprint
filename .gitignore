@@ -19,3 +19,6 @@ staticfiles/
 media/
 db.sqlite3-journal
 *.log
+# Test coverage data
+.coverage
+htmlcov/
