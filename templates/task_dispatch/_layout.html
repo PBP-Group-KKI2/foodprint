@@ -11,10 +11,12 @@
 {% block content %}
 {% with view_name=request.resolver_match.url_name %}
 <section class="rp-page td-page{% block page_width %}{% endblock page_width %}">
+  {% if user.is_staff or user.profile.role == 'OFFICIAL' %}
   <nav class="td-tabs" aria-label="Task lists">
     <a href="{% url 'dispatch:pending_reports' %}" class="td-tab{% if view_name == 'pending_reports' %} td-tab--active{% endif %}"{% if view_name == 'pending_reports' %} aria-current="page"{% endif %}>Pending reports</a>
     <a href="{% url 'dispatch:my_tasks' %}" class="td-tab{% if view_name == 'my_tasks' %} td-tab--active{% endif %}"{% if view_name == 'my_tasks' %} aria-current="page"{% endif %}>My tasks</a>
   </nav>
+  {% endif %}
 
   {% block dispatch_content %}{% endblock dispatch_content %}
 </section>

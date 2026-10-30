@@ -1,5 +1,6 @@
-{# Included on the report detail page. Only officials and staff see it. #}
+{# Included on the report detail page. #}
 {% if user.is_staff or user.profile.role == 'OFFICIAL' %}
+  {# Officials: claim or open the task #}
   <div class="rp-actions">
     {% if report.task %}
       <p class="rp-hint">
@@ -12,5 +13,14 @@
         <button type="submit" class="rp-btn rp-btn--primary">Claim for collection</button>
       </form>
     {% endif %}
+  </div>
+{% elif report.task and user.is_authenticated %}
+  {# Everyone else: read-only progress #}
+  <div class="rp-actions">
+    <p class="rp-hint">
+      Collection task: <strong>{{ report.task.get_status_display }}</strong>
+      {% if report.task.scheduled_for %}· pickup {{ report.task.scheduled_for|date:"j M Y" }}{% endif %}
+      <a href="{% url 'dispatch:task_detail' report.task.pk %}" class="rp-back">View progress &rarr;</a>
+    </p>
   </div>
 {% endif %}

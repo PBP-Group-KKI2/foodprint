@@ -307,3 +307,30 @@ class TaskDispatchTests(TestCase):
         self.assertEqual(self.report.title, "Rice and bread behind the canteen")
         self.assertEqual(self.report.status, WasteReport.Status.IN_PROGRESS)
         self.assertTrue(task.is_open)
+
+    
+    # ---------- read-only task view for non-officials ----------
+
+    def test_citizen_can_view_task_read_only(self):
+        task = CollectionTask.claim(self.report, self.official)
+        task.notes = "Internal: bring two bags"
+        task.save()
+        self.login(self.citizen)
+        res = self.client.get(self.task_url("task_detail", task))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Rice behind the canteen")
+        self.assertNotContains(res, "Internal: bring two bags")
+        self.assertNotContains(res, self.task_url("task_close", task))
+        self.assertNotContains(res, reverse("dispatch:my_tasks"))
+
+    def test_report_page_links_citizens_to_progress(self):
+        task = CollectionTask.claim(self.report, self.official)
+        self.login(self.citizen)
+        res = self.client.get(reverse("main:report_detail", args=[self.report.pk]))
+        self.assertContains(res, self.task_url("task_detail", task))
+        self.assertNotContains(res, "Claim for collection")
+
+    def test_anonymous_task_detail_sent_to_login(self):
+        task = CollectionTask.claim(self.report, self.official)
+        res = self.client.get(self.task_url("task_detail", task))
+        self.assertEqual(res.status_code, 302)
