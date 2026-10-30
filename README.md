@@ -109,12 +109,30 @@ Description of AI Usage:
 
 I understand that my knowledge and understanding is still limited, therefore the usage of AI was to support me in learning the things that I have not understand yet.
 
+### AI Disclosure — Reporting & Mapping and Development/Bug Fixing Assistance 
+I used Claude (Anthropic) as a coding assistant during this project.
 
+How I used it:
+- Generating code drafts for parts of my Reporting & Mapping module (views, forms,
+  templates, map JavaScript)
+- Explaining Django concepts, helping with debugging errors (migration conflicts, CSRF,
+  template errors), and walking me through Git workflows (branching, merging,
+  resolving conflicts)
+- Reviewing branches for merge conflicts and test failures
+
+What I did myself:
+- Decided the features and behaviour (Who can access what section, who can edit etc)
+- Wrote/changed parts myself: (the Analytics role-based nav visibility, routing for urls in my module, view and models of reporting and mapping too)
+- Reviewed, adapted and integrated all AI-generated code into the project
+- Tested every feature manually and with the test suite before each PR
+- Resolved merge conflicts, opened and merged PRs, and coordinated changes with
+  teammates
+
+During development process, I still looked over what the AI tried to add / alter and made sure it followed my intentions with the module itself. I used the AI as a support to speed up development
 
 ### Other modules
 - **Profile (Dihya Fauzan Haryadi):** _to be completed_
 - **Reward System (Kenaz Shidqi Baswara):** _to be completed_
-- **Reporting & Mapping (Goran Adriano Tamrella):** _to be completed_
 - **Task Dispatch System (Sorush Baghertash):** _to be completed_
 
 ---

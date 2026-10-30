@@ -248,9 +248,7 @@ button { font: inherit; cursor: pointer; }
   display: inline-block;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
-  background: var(--white);
-  border: 2px solid var(--green-500);
+  border-radius: 24%;   /* matches the rounded corners drawn in logo.svg */
 }
 .navbar__nav { justify-self: center; }
 .navbar__links {
@@ -908,6 +906,50 @@ a.feature-card:hover .feature-card__cta .icon { transform: translateX(3px); }
   font-size: var(--fs-xs);
   color: rgba(255, 255, 255, .6);
 }
+
+/* =============================================================
+   PAGE MOTION
+   Pages with a map only fade, so Leaflet never measures a moving container.
+   ============================================================= */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+#main-content > * { animation: page-in 350ms var(--ease-out) backwards; }
+#main-content > :has(.rp-map) { animation-name: fade-in; }
+.page--landing #main-content > * { animation: none; }
+
+.educational-hub__grid > *,
+.dashboard-grid > *,
+.rp-list > * { animation: page-in 400ms var(--ease-out) backwards; }
+.educational-hub__grid > :nth-child(2),
+.dashboard-grid > :nth-child(2),
+.rp-list > :nth-child(2) { animation-delay: 50ms; }
+.educational-hub__grid > :nth-child(3),
+.dashboard-grid > :nth-child(3),
+.rp-list > :nth-child(3) { animation-delay: 100ms; }
+.educational-hub__grid > :nth-child(4),
+.dashboard-grid > :nth-child(4),
+.rp-list > :nth-child(4) { animation-delay: 150ms; }
+.educational-hub__grid > :nth-child(5),
+.dashboard-grid > :nth-child(5),
+.rp-list > :nth-child(5) { animation-delay: 200ms; }
+.educational-hub__grid > :nth-child(n+6),
+.dashboard-grid > :nth-child(n+6),
+.rp-list > :nth-child(n+6) { animation-delay: 250ms; }
+
+/* HTMX marks swapped-in content with .htmx-added until it settles */
+#educational-hub-results > .htmx-added,
+#educational-hub-data-results > .htmx-added,
+#comments.htmx-added { opacity: 0; }
+#educational-hub-results > *,
+#educational-hub-data-results > *,
+#comments { transition: opacity 200ms ease-out; }
 
 /* =============================================================
    TOAST (templates mark it with data-toast; base.html handles dismissal)
