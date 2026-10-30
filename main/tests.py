@@ -331,3 +331,16 @@ class DashboardNavigationTests(TestCase):
         res = self.client.get(reverse("main:landing"))
         self.assertContains(res, f'<a href="{reverse("main:show_reward")}" class="navbar__link">Rewards</a>', html=True)
         self.assertContains(res, f'<li><a href="{reverse("main:dashboard_router")}">Dashboard</a></li>', html=True)
+
+
+class OrganizationDashboardTests(TestCase):
+    def test_data_insights_button_opens_analytics(self):
+        user = User.objects.create_user("org", password="pass12345")
+        Profile.objects.create(user=user, role="ORGANIZATION")
+        self.client.login(username="org", password="pass12345")
+        res = self.client.get(reverse("main:organization_dashboard"))
+        self.assertContains(
+            res,
+            f'<a href="{reverse("analytics:show_analytics")}" class="dashboard-btn dashboard-btn--outline">View Data Insights</a>',
+            html=True,
+        )
