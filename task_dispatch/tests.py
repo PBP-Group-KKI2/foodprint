@@ -261,3 +261,49 @@ class TaskDispatchTests(TestCase):
         self.login(self.citizen)
         res = self.client.get(reverse("main:report_map"))
         self.assertNotContains(res, ">Tasks</a>")
+
+    # ---------- admin status changes on the report edit page ----------
+
+    def admin_set_report_status(self, status):
+        admin = User.objects.create_user("admin", password="pass12345", is_staff=True)
+        self.login(admin)
+        return self.client.post(reverse("main:report_update", args=[self.report.pk]), {
+            "title": self.report.title,
+            "waste_type": self.report.waste_type,
+            "severity": self.report.severity,
+            "latitude": self.report.latitude,
+            "longitude": self.report.longitude,
+            "status": status,
+        })
+
+    def test_admin_reopening_report_puts_it_back_on_pending_list(self):
+        CollectionTask.claim(self.report, self.official).close("Collected two bags.")
+        self.admin_set_report_status("REPORTED")
+        self.assertFalse(CollectionTask.objects.exists())
+
+        self.login(self.other_official)
+        self.assertContains(self.client.get(reverse("dispatch:pending_reports")), "Rice behind the canteen")
+        self.assertIsNotNone(CollectionTask.claim(self.report, self.other_official))
+
+    def test_admin_resolving_report_closes_open_task(self):
+        task = CollectionTask.claim(self.report, self.official)
+        self.admin_set_report_status("RESOLVED")
+        task.refresh_from_db()
+        self.assertEqual(task.status, CollectionTask.Status.CLOSED)
+        self.assertEqual(task.closing_note, "Marked as resolved by an admin.")
+
+    def test_reporter_editing_claimed_report_keeps_task(self):
+        task = CollectionTask.claim(self.report, self.official)
+        self.login(self.citizen)
+        self.client.post(reverse("main:report_update", args=[self.report.pk]), {
+            "title": "Rice and bread behind the canteen",
+            "waste_type": "FOOD",
+            "severity": "HIGH",
+            "latitude": self.report.latitude,
+            "longitude": self.report.longitude,
+        })
+        task.refresh_from_db()
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.title, "Rice and bread behind the canteen")
+        self.assertEqual(self.report.status, WasteReport.Status.IN_PROGRESS)
+        self.assertTrue(task.is_open)
