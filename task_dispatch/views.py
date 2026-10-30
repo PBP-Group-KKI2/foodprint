@@ -176,15 +176,20 @@ def claim_report(request, report_pk):
     return redirect(task)
 
 
-@dispatcher_required
+@login_required
 @require_GET
 def task_detail(request, pk):
+    """Anyone logged in can follow a task's progress (read-only).
+    Only the claiming official (or staff) gets the action buttons."""
     task = get_object_or_404(
         CollectionTask.objects.select_related("report__reporter", "official"), pk=pk
     )
-    context = {"task": task, "can_manage": task.can_be_managed_by(request.user)}
+    context = {
+        "task": task,
+        "can_manage": task.can_be_managed_by(request.user),
+        "is_dispatcher": is_dispatcher(request.user),
+    }
     return render(request, "task_dispatch/task_detail.html", context)
-
 
 @dispatcher_required
 def task_update(request, pk):
