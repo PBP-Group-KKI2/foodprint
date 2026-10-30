@@ -74,6 +74,20 @@
         }
       });
     }
+
+    // Toasts close themselves, but wait while hovered or focused so slower readers keep them
+    document.querySelectorAll('[data-toast]').forEach((toast) => {
+      let timer;
+      const close = () => { toast.hidden = true; };
+      const start = () => { timer = setTimeout(close, 7000); };
+      const pause = () => clearTimeout(timer);
+      toast.querySelector('[data-toast-close]')?.addEventListener('click', close);
+      toast.addEventListener('mouseenter', pause);
+      toast.addEventListener('mouseleave', start);
+      toast.addEventListener('focusin', pause);
+      toast.addEventListener('focusout', start);
+      start();
+    });
   </script>
 
   {# Page-specific JavaScript (AJAX, HTMX, maps) goes here #}

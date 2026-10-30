@@ -910,6 +910,45 @@ a.feature-card:hover .feature-card__cta .icon { transform: translateX(3px); }
 }
 
 /* =============================================================
+   TOAST (templates mark it with data-toast; base.html handles dismissal)
+   ============================================================= */
+.toast {
+  position: fixed;
+  top: calc(var(--nav-h) + 1rem);
+  right: clamp(1rem, 4vw, 2.5rem);
+  z-index: 70;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: min(380px, calc(100vw - 2rem));
+  padding: 0.875rem 0.875rem 0.875rem 1.125rem;
+  border-left: 4px solid var(--amber-500);
+  border-radius: var(--radius-sm);
+  background: var(--green-900);
+  color: var(--white);
+  box-shadow: 0 12px 32px rgba(31, 42, 20, .25);
+  animation: toast-in 300ms cubic-bezier(.2, .7, .2, 1) both;
+}
+.toast[hidden] { display: none; }
+.toast__text { font-size: var(--fs-sm); line-height: 1.5; }
+.toast__close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .12);
+  color: var(--white);
+  font-size: 1.125rem;
+  line-height: 1;
+}
+.toast__close:hover { background: rgba(255, 255, 255, .22); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* =============================================================
    RESPONSIVE
    ============================================================= */
 /* Officials see seven links, so the bar switches to the menu before it gets crowded */
@@ -930,6 +969,7 @@ a.feature-card:hover .feature-card__cta .icon { transform: translateX(3px); }
 
 @media (max-width: 640px) {
   .navbar__cta { display: none; }
+  .toast { left: 1rem; right: 1rem; max-width: none; }
 
   .hero { min-height: 640px; }
   .hero__scroll { display: none; }

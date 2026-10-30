@@ -1,14 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% if login_required_notice %}
+  <div class="toast" role="status" data-toast>
+    <p class="toast__text">Please log in first to continue. We'll take you right back afterwards.</p>
+    <button type="button" class="toast__close" aria-label="Dismiss notification" data-toast-close>&times;</button>
+  </div>
+{% endif %}
 <section class="login-section">
     <div class="container">
         <h1>Login</h1>
-        {% for message in messages %}
-            <p class="form-message">{{ message }}</p>
-        {% endfor %}
         <form method="post" action="{% url 'main:login' %}" class="project-form">
             {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             {% for field in form %}
                 <div class="form-group">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>

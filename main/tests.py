@@ -614,3 +614,73 @@ class LandingMotionTests(TestCase):
         res = self.client.get(reverse("main:landing"))
         self.assertContains(res, "js/landing.js")
         self.assertContains(res, 'id="landing-chart-data"')
+
+
+class LoginRequiredRedirectTests(TestCase):
+    """Protected pages send visitors to login with a notice, then back where they were going."""
+
+    NOTICE = "Please log in first to continue"
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS")
+        self.login_url = reverse("main:login")
+
+    def test_protected_pages_redirect_to_login_with_notice(self):
+        for url in (
+            reverse("main:dashboard_router"),
+            reverse("main:show_reward"),
+            reverse("main:update_profile"),
+            reverse("education:article_create"),
+            reverse("dispatch:pending_reports"),
+        ):
+            with self.subTest(url=url):
+                res = self.client.get(url, follow=True)
+                self.assertRedirects(res, f"{self.login_url}?next={url}")
+                self.assertContains(res, self.NOTICE)
+                self.assertContains(res, f'<input type="hidden" name="next" value="{url}">', html=True)
+
+    def test_plain_login_page_has_no_notice(self):
+        self.assertNotContains(self.client.get(self.login_url), self.NOTICE)
+
+    def test_navbar_dashboard_link_lets_login_required_add_next(self):
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(
+            res, f'<a href="{reverse("main:dashboard_router")}" class="navbar__link">Dashboard</a>', html=True
+        )
+
+    def test_invalid_credentials_keep_destination_without_notice(self):
+        res = self.client.post(self.login_url, {"username": "alice", "password": "wrong", "next": "/rewards/"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, '<input type="hidden" name="next" value="/rewards/">', html=True)
+        self.assertNotContains(res, self.NOTICE)
+        self.assertTrue(res.context["form"].errors)
+
+    def test_login_returns_to_intended_page(self):
+        res = self.client.post(self.login_url, {"username": "alice", "password": "pass12345", "next": "/rewards/"})
+        self.assertRedirects(res, reverse("main:show_reward"))
+
+    def test_login_without_destination_goes_home(self):
+        res = self.client.post(self.login_url, {"username": "alice", "password": "pass12345"})
+        self.assertRedirects(res, reverse("main:landing"))
+
+    def test_external_destinations_are_ignored(self):
+        for bad in ("https://evil.example/", "//evil.example/", "javascript:alert(1)"):
+            with self.subTest(next=bad):
+                page = self.client.get(self.login_url, {"next": bad})
+                self.assertNotContains(page, "evil.example")
+                self.assertNotContains(page, self.NOTICE)
+                res = self.client.post(self.login_url, {"username": "alice", "password": "pass12345", "next": bad})
+                self.assertRedirects(res, reverse("main:landing"))
+                self.client.logout()
+
+    def test_authenticated_user_reaches_allowed_page_without_notice(self):
+        self.client.force_login(self.user)
+        res = self.client.get(reverse("main:show_reward"))
+        self.assertEqual(res.status_code, 200)
+        self.assertNotContains(res, self.NOTICE)
+
+    def test_authenticated_user_without_permission_still_gets_403(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("main:official_dashboard")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("dispatch:pending_reports")).status_code, 403)
