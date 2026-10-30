@@ -19,7 +19,7 @@
   {# Page-specific CSS or <meta> tags go here #}
   {% block extra_head %}{% endblock extra_head %}
 </head>
-{# Pages can add a body class, e.g. "page--landing" makes the navbar float transparent over the hero #}
+{# Pages can add a body class for page-specific styles, e.g. "page--landing" #}
 <body class="{% block body_class %}{% endblock body_class %}">
 
   {% include 'navbar.html' %}
@@ -58,6 +58,20 @@
         const open = menuToggle.getAttribute('aria-expanded') === 'true';
         menuToggle.setAttribute('aria-expanded', String(!open));
         mobileMenu.hidden = open;
+      });
+    }
+
+    // Account menu (<details>): close on outside click or Escape
+    const accountMenu = document.querySelector('.navbar__account');
+    if (accountMenu) {
+      document.addEventListener('click', (event) => {
+        if (accountMenu.open && !accountMenu.contains(event.target)) accountMenu.open = false;
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && accountMenu.open) {
+          accountMenu.open = false;
+          accountMenu.querySelector('summary').focus();
+        }
       });
     }
   </script>

@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -483,3 +485,59 @@ class RegisterRoleTests(TestCase):
         self.assertRedirects(res, reverse("admin:main_profile_changelist"))
         profile.refresh_from_db()
         self.assertEqual(profile.role, "OFFICIAL")
+
+
+class SharedNavbarTests(TestCase):
+    """Every page, including the landing page, renders the same shared navbar."""
+
+    def setUp(self):
+        self.official = User.objects.create_user("officer", password="pass12345")
+        Profile.objects.create(user=self.official, role="OFFICIAL")
+        self.citizen = User.objects.create_user("citizen", password="pass12345")
+        Profile.objects.create(user=self.citizen, role="USERS")
+
+    def navbar(self, url):
+        html = self.client.get(url).content.decode()
+        self.assertEqual(html.count('<header class="navbar">'), 1)
+        block = re.search(r'<header class="navbar">.*?</header>', html, re.S).group(0)
+        # Ignore the parts that legitimately change per page
+        block = re.sub(r' navbar__link--active| aria-current="page"|name="next" value="[^"]*"', "", block)
+        return re.sub(r'name="csrfmiddlewaretoken" value="[^"]*"', "", block)
+
+    def test_landing_page_uses_the_shared_navbar(self):
+        for user in (None, self.citizen, self.official):
+            with self.subTest(user=user):
+                if user:
+                    self.client.force_login(user)
+                self.assertEqual(self.navbar(reverse("main:landing")), self.navbar(reverse("main:report_map")))
+
+    def test_landing_page_marks_home_active(self):
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(
+            res, f'<a href="{reverse("main:landing")}" class="navbar__link navbar__link--active" aria-current="page">Home</a>', html=True,
+        )
+
+    def test_account_controls_are_grouped_in_one_menu(self):
+        self.client.force_login(self.official)
+        res = self.client.get(reverse("main:report_map"))
+        menu = re.search(r'<details class="navbar__account">.*?</details>', res.content.decode(), re.S).group(0)
+        self.assertIn(f'href="{reverse("main:update_profile")}"', menu)
+        self.assertIn(f'action="{reverse("main:toggle_rank")}"', menu)
+        self.assertIn(f'href="{reverse("main:logout")}"', menu)
+        self.assertNotContains(res, "navbar__cta")
+
+    def test_role_specific_links(self):
+        tasks, analytics = reverse("dispatch:pending_reports"), reverse("analytics:show_analytics")
+        self.client.force_login(self.official)
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, f'<a href="{tasks}" class="navbar__link">Tasks</a>', html=True)
+        self.assertContains(res, f'<a href="{analytics}" class="navbar__link">Analytics</a>', html=True)
+        self.client.force_login(self.citizen)
+        res = self.client.get(reverse("main:report_map"))
+        self.assertNotContains(res, ">Tasks</a>")
+        self.assertNotContains(res, ">Analytics</a>")
+
+    def test_anonymous_sees_log_in_instead_of_account_menu(self):
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, f'<a href="{reverse("main:login")}" class="btn btn--outline navbar__cta">Log in</a>', html=True)
+        self.assertNotContains(res, '<details class="navbar__account">')
