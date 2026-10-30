@@ -446,7 +446,7 @@ class UpdateProfileUsernameTests(TestCase):
 
 
 class RegisterRoleTests(TestCase):
-    """Officials get access to Task Dispatch, so the public sign-up form must not offer that role."""
+    """Every role can sign up; admins can still change a role later in /admin/."""
 
     def data(self, role):
         return {
@@ -457,17 +457,13 @@ class RegisterRoleTests(TestCase):
             "role": role,
         }
 
-    def test_official_role_is_not_offered(self):
+    def test_every_role_is_offered(self):
         res = self.client.get(reverse("main:register"))
-        self.assertNotContains(res, 'value="OFFICIAL"')
+        for role in ("USERS", "ORGANIZATION", "OFFICIAL"):
+            self.assertContains(res, f'value="{role}"')
 
-    def test_cannot_register_as_official(self):
-        res = self.client.post(reverse("main:register"), self.data("OFFICIAL"))
-        self.assertEqual(res.status_code, 200)
-        self.assertFalse(User.objects.filter(username="newuser").exists())
-
-    def test_users_and_organizations_can_register(self):
-        for role in ("USERS", "ORGANIZATION"):
+    def test_each_role_can_register(self):
+        for role in ("USERS", "ORGANIZATION", "OFFICIAL"):
             with self.subTest(role=role):
                 User.objects.filter(username="newuser").delete()
                 res = self.client.post(reverse("main:register"), self.data(role))
