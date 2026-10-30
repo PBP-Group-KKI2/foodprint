@@ -95,7 +95,6 @@ My use of AI included:
 
 Throughout development, I remained involved in deciding how features should behave, evaluating suggested approaches, checking implementations, and making adjustments based on the project's requirements. AI assistance was used to support my development process and understanding of the codebase, rather than as a substitute for understanding the implementation.
 
-
 ### AI Disclosure — Analytics and Dashboards Assistance
 
 Tool: Google Gemini
