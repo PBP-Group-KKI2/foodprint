@@ -9,7 +9,7 @@ def show_analytics(request):
     base_qs = WasteReport.objects.all()
 
     preset_id = request.GET.get('preset')
-    if preset_id and request.user.is_authenticated:
+    if preset_id and preset_id.isdigit() and request.user.is_authenticated:
         try:
             active_preset = DashboardPreset.objects.get(id=preset_id, user=request.user)
             if active_preset.city:
@@ -82,10 +82,11 @@ def show_analytics(request):
     return render(request, "analytics/analytics_dashboard.html", context)
 
 def save_preset(request):
-    if request.method == "POST" and request.user.is_authenticated:
+    name = request.POST.get('name', '').strip()
+    if request.method == "POST" and request.user.is_authenticated and name:
         DashboardPreset.objects.create(
             user=request.user,
-            name=request.POST.get('name'),
+            name=name,
             city=request.POST.get('city'),
             district=request.POST.get('district'),
             waste_type=request.POST.get('waste_type'),

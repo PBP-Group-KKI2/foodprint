@@ -6,6 +6,8 @@
   - Home is active on the "main:landing" view.
   - Every other link is active when the current view belongs to that module's
     URL namespace (the app_name in the module's urls.py).
+  - Reporting, Rewards and Dashboard live in the "main" namespace, so they match
+    on view names instead.
   When your module's URLs exist, replace "#" with {% url '<namespace>:<name>' %}
   and make sure the namespace below matches your app_name.
 {% endcomment %}
@@ -23,7 +25,7 @@
     <nav class="navbar__nav" aria-label="Main">
       <ul class="navbar__links">
         <li><a href="{% url 'main:landing' %}" class="navbar__link{% if view_name == 'main:landing' %} navbar__link--active{% endif %}"{% if view_name == 'main:landing' %} aria-current="page"{% endif %}>Home</a></li>
-        <li><a href="{% url 'main:report_map' %}" class="navbar__link{% if view_name == 'main:report_map' %} navbar__link--active{% endif %}"{% if view_name == 'main:report_map' %} aria-current="page"{% endif %}>Reporting &amp; Mapping</a></li>
+        <li><a href="{% url 'main:report_map' %}" class="navbar__link{% if 'main:report_' in view_name %} navbar__link--active{% endif %}"{% if 'main:report_' in view_name %} aria-current="page"{% endif %}>Reporting &amp; Mapping</a></li>
         {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}" class="navbar__link{% if ns == 'dispatch' %} navbar__link--active{% endif %}"{% if ns == 'dispatch' %} aria-current="page"{% endif %}>Tasks</a></li>{% endif %}
         {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
         <li><a href="{% url 'education:article_list' %}" class="navbar__link{% if ns == 'education' %} navbar__link--active{% endif %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
@@ -61,7 +63,7 @@
   <nav id="mobile-menu" class="navbar__mobile" aria-label="Mobile" hidden>
     <ul class="navbar__mobile-links">
       <li><a href="{% url 'main:landing' %}"{% if view_name == 'main:landing' %} aria-current="page"{% endif %}>Home</a></li>
-      <li><a href="{% url 'main:report_map' %}"{% if view_name == 'main:report_map' %} aria-current="page"{% endif %}>Reporting &amp; Mapping</a></li>
+      <li><a href="{% url 'main:report_map' %}"{% if 'main:report_' in view_name %} aria-current="page"{% endif %}>Reporting &amp; Mapping</a></li>
       {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}"{% if ns == 'dispatch' %} aria-current="page"{% endif %}>Tasks</a></li>{% endif %}
       {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
       <li><a href="{% url 'education:article_list' %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>

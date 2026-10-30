@@ -110,3 +110,24 @@ class DashboardTests(TestCase):
         # Verify whether the preset still exists in the database
         self.assertTrue(DashboardPreset.objects.filter(id=self.preset.id).exists())
 
+
+
+class InvalidPresetInputTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.client.login(username='testuser', password='password123')
+
+    def test_non_numeric_preset_is_ignored(self):
+        # A hand-edited ?preset=abc should show the unfiltered dashboard, not crash
+        response = self.client.get(reverse('analytics:show_analytics'), {'preset': 'abc'})
+        self.assertEqual(response.status_code, 200)
+
+    def test_preset_without_name_is_not_saved(self):
+        response = self.client.post(reverse('analytics:save_preset'), data={'name': '   ', 'city': 'Depok'})
+        self.assertRedirects(response, reverse('analytics:show_analytics'))
+        self.assertFalse(DashboardPreset.objects.exists())
+
+    def test_preset_with_missing_name_field_is_not_saved(self):
+        response = self.client.post(reverse('analytics:save_preset'), data={'city': 'Depok'})
+        self.assertRedirects(response, reverse('analytics:show_analytics'))
+        self.assertFalse(DashboardPreset.objects.exists())

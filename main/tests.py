@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import WasteReport
+from .models import Profile, WasteReport
 
 AJAX = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
 
@@ -249,3 +249,237 @@ class ReportAdminPermissionTests(TestCase):
         self.assertContains(detail, self.edit_url)
         html = self.client.get(reverse("main:report_list_json")).json()["html"]
         self.assertIn("data-delete-url", html)
+
+class NavbarActiveStateTests(TestCase):
+    """The navbar highlights the section the current page belongs to."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS")
+        self.client.login(username="alice", password="pass12345")
+
+    def active_link(self, url, label):
+        return f'<a href="{url}" class="navbar__link navbar__link--active" aria-current="page">{label}</a>'
+
+    def test_rewards_link_is_active_on_rewards_page(self):
+        res = self.client.get(reverse("main:show_reward"))
+        self.assertContains(res, self.active_link(reverse("main:show_reward"), "Rewards"), html=True)
+
+    def test_only_one_item_is_active(self):
+        res = self.client.get(reverse("main:show_reward"))
+        html = res.content.decode()
+        self.assertEqual(html.count("navbar__link--active"), 1)
+        # one aria-current in the desktop nav, one in the mobile menu
+        self.assertEqual(html.count('aria-current="page"'), 2)
+
+    def test_report_detail_keeps_reporting_active(self):
+        report = WasteReport.objects.create(reporter=self.user, title="Rice", latitude=0, longitude=0)
+        res = self.client.get(reverse("main:report_detail", args=[report.pk]))
+        self.assertContains(
+            res, self.active_link(reverse("main:report_map"), "Reporting &amp; Mapping"), html=True
+        )
+
+
+class DashboardNavigationTests(TestCase):
+    """The Dashboard link goes through dashboard_router to each role's own page."""
+
+    def setUp(self):
+        for username, role in [("citizen", "USERS"), ("official", "OFFICIAL"), ("org", "ORGANIZATION")]:
+            user = User.objects.create_user(username, password="pass12345")
+            Profile.objects.create(user=user, role=role)
+
+    def test_navbar_dashboard_link_points_to_router(self):
+        self.client.login(username="citizen", password="pass12345")
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, f'href="{reverse("main:dashboard_router")}"', count=2)  # desktop + mobile
+
+    def test_anonymous_is_sent_to_login(self):
+        res = self.client.get(reverse("main:dashboard_router"))
+        self.assertRedirects(
+            res, f'{reverse("main:login")}?next={reverse("main:dashboard_router")}',
+        )
+
+    def test_each_role_reaches_its_own_dashboard(self):
+        expected = {
+            "citizen": "main:users_dashboard",
+            "official": "main:official_dashboard",
+            "org": "main:organization_dashboard",
+        }
+        for username, url_name in expected.items():
+            with self.subTest(username=username):
+                self.client.login(username=username, password="pass12345")
+                res = self.client.get(reverse("main:dashboard_router"), follow=True)
+                self.assertRedirects(res, reverse(url_name))
+                self.assertEqual(res.status_code, 200)
+
+    def test_dashboard_link_is_active_on_dashboard(self):
+        self.client.login(username="citizen", password="pass12345")
+        res = self.client.get(reverse("main:users_dashboard"))
+        self.assertContains(
+            res,
+            f'<a href="{reverse("main:dashboard_router")}" class="navbar__link navbar__link--active" aria-current="page">Dashboard</a>',
+            html=True,
+        )
+
+    def test_analytics_page_does_not_mark_dashboard_active(self):
+        self.client.login(username="org", password="pass12345")
+        html = self.client.get(reverse("analytics:show_analytics")).content.decode()
+        self.assertEqual(html.count("navbar__link--active"), 1)
+
+    def test_landing_page_links(self):
+        self.client.login(username="citizen", password="pass12345")
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, f'<a href="{reverse("main:show_reward")}" class="navbar__link">Rewards</a>', html=True)
+        self.assertContains(res, f'<li><a href="{reverse("main:dashboard_router")}">Dashboard</a></li>', html=True)
+
+
+class OrganizationDashboardTests(TestCase):
+    def test_data_insights_button_opens_analytics(self):
+        user = User.objects.create_user("org", password="pass12345")
+        Profile.objects.create(user=user, role="ORGANIZATION")
+        self.client.login(username="org", password="pass12345")
+        res = self.client.get(reverse("main:organization_dashboard"))
+        self.assertContains(
+            res,
+            f'<a href="{reverse("analytics:show_analytics")}" class="dashboard-btn dashboard-btn--outline">View Data Insights</a>',
+            html=True,
+        )
+
+
+class PlaceholderLinkTests(TestCase):
+    """No link on the shared layout or landing page should still point to "#"."""
+
+    def setUp(self):
+        user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=user, role="USERS")
+
+    def test_no_placeholder_links(self):
+        for logged_in in (False, True):
+            if logged_in:
+                self.client.login(username="alice", password="pass12345")
+            for url_name in ("main:landing", "main:report_map"):
+                with self.subTest(page=url_name, logged_in=logged_in):
+                    self.assertNotContains(self.client.get(reverse(url_name)), 'href="#"')
+
+    def test_landing_feature_cards_link_to_modules(self):
+        res = self.client.get(reverse("main:landing"))
+        for url_name in ("main:report_map", "main:show_reward", "main:dashboard_router"):
+            self.assertContains(res, f'<a href="{reverse(url_name)}" class="feature-card">')
+        self.assertNotContains(res, "Coming soon")
+
+
+class MissingProfileTests(TestCase):
+    """Accounts made with createsuperuser have no Profile and must not crash pages."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", "admin@example.com", "pass12345")
+        self.client.login(username="admin", password="pass12345")
+
+    def test_rewards_page_works_without_profile(self):
+        res = self.client.get(reverse("main:show_reward"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Points: <strong>0</strong>", html=True)
+
+    def test_toggle_rank_works_without_profile(self):
+        res = self.client.post(reverse("main:toggle_rank"), {"next": reverse("main:landing")})
+        self.assertRedirects(res, reverse("main:landing"))
+        self.assertFalse(Profile.objects.get(user=self.admin).show_rank)
+
+    def test_role_dashboards_deny_instead_of_crashing(self):
+        for url_name in ("main:official_dashboard", "main:organization_dashboard"):
+            with self.subTest(url_name=url_name):
+                self.assertEqual(self.client.get(reverse(url_name)).status_code, 403)
+
+    def test_dashboard_router_still_reaches_a_dashboard(self):
+        res = self.client.get(reverse("main:dashboard_router"), follow=True)
+        self.assertRedirects(res, reverse("main:users_dashboard"))
+
+    def test_wrong_role_is_still_forbidden(self):
+        citizen = User.objects.create_user("citizen", password="pass12345")
+        Profile.objects.create(user=citizen, role="USERS")
+        self.client.login(username="citizen", password="pass12345")
+        self.assertEqual(self.client.get(reverse("main:official_dashboard")).status_code, 403)
+
+
+class RewardRankHintTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        self.profile = Profile.objects.create(user=self.user, role="USERS")
+        self.client.login(username="alice", password="pass12345")
+
+    def test_hint_matches_each_rank(self):
+        cases = [
+            (0, 'Reach 100 points to become "Civic"', "0/100"),
+            (150, 'Reach 300 points to become "Critical"', "150/300"),
+            (500, 'Reach 1000 points to become "Concise"', "500/1000"),
+            (1200, "You are already on maximum level", "1200"),
+        ]
+        for points, hint, progress in cases:
+            with self.subTest(points=points):
+                self.profile.points = points
+                self.profile.save()
+                res = self.client.get(reverse("main:show_reward"))
+                self.assertContains(res, hint)
+                self.assertContains(res, f'<span class="progress__text">{progress}</span>', html=True)
+
+
+class UpdateProfileUsernameTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS", email="alice@example.com")
+        User.objects.create_user("bob", password="pass12345")
+        self.client.login(username="alice", password="pass12345")
+        self.url = reverse("main:update_profile")
+
+    def test_taken_username_shows_error_instead_of_crashing(self):
+        res = self.client.post(self.url, {"username": "bob", "email": "alice@example.com"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "That username is already taken.")
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "alice")
+
+    def test_free_username_is_saved(self):
+        res = self.client.post(self.url, {"username": "alicia", "email": "alice@example.com"})
+        self.assertRedirects(res, reverse("main:dashboard_router"), fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "alicia")
+
+
+class RegisterRoleTests(TestCase):
+    """Every role can sign up; admins can still change a role later in /admin/."""
+
+    def data(self, role):
+        return {
+            "username": "newuser",
+            "email": "new@example.com",
+            "password1": "Xq-secret-9876",
+            "password2": "Xq-secret-9876",
+            "role": role,
+        }
+
+    def test_every_role_is_offered(self):
+        res = self.client.get(reverse("main:register"))
+        for role in ("USERS", "ORGANIZATION", "OFFICIAL"):
+            self.assertContains(res, f'value="{role}"')
+
+    def test_each_role_can_register(self):
+        for role in ("USERS", "ORGANIZATION", "OFFICIAL"):
+            with self.subTest(role=role):
+                User.objects.filter(username="newuser").delete()
+                res = self.client.post(reverse("main:register"), self.data(role))
+                self.assertRedirects(res, reverse("main:dashboard_router"), fetch_redirect_response=False)
+                self.assertEqual(Profile.objects.get(user__username="newuser").role, role)
+                self.client.logout()
+
+    def test_admin_can_promote_a_user_to_official(self):
+        User.objects.create_superuser("admin", "admin@example.com", "pass12345")
+        user = User.objects.create_user("newuser", password="pass12345")
+        profile = Profile.objects.create(user=user, role="USERS")
+        self.client.login(username="admin", password="pass12345")
+        res = self.client.post(
+            reverse("admin:main_profile_change", args=[profile.pk]),
+            {"user": user.pk, "role": "OFFICIAL", "email": "", "points": 0, "show_rank": "on"},
+        )
+        self.assertRedirects(res, reverse("admin:main_profile_changelist"))
+        profile.refresh_from_db()
+        self.assertEqual(profile.role, "OFFICIAL")
