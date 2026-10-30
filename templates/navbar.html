@@ -63,7 +63,7 @@
       <li><a href="{% url 'main:landing' %}"{% if view_name == 'main:landing' %} aria-current="page"{% endif %}>Home</a></li>
       <li><a href="{% url 'main:report_map' %}"{% if view_name == 'main:report_map' %} aria-current="page"{% endif %}>Reporting &amp; Mapping</a></li>
       {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}"{% if ns == 'dispatch' %} aria-current="page"{% endif %}>Tasks</a></li>{% endif %}
-      <li><a href="{% url 'analytics:show_analytics' %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>
+      {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
       <li><a href="{% url 'education:article_list' %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
       <li><a href="{% url 'main:show_reward' %}"{% if ns == 'rewards' %} aria-current="page"{% endif %}>Rewards</a></li>
       <li><a href="#"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Dashboard</a></li>
