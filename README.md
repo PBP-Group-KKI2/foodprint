@@ -129,9 +129,19 @@ What I did myself:
 
 During development process, I still looked over what the AI tried to add / alter and made sure it followed my intentions with the module itself. I used the AI as a support to speed up development
 
+### AI Disclosure — Reward System and Development/Bug Fixing Assistance 
+Tool: Claude and Gemini
+
+On my progress completing reward system, I use several AI assistance in order to debugging and consulting my concern with the website problem:
+- URL conflict, the view does not working to the reward page. 
+- Migration conflict.
+- Consulting reward system mechanism to be relevant with the website.
+- Difficulty on git push on new branch.
+
+Those are several problems where I use AI assistance to help me solve it.
+
 ### Other modules
 - **Profile (Dihya Fauzan Haryadi):** _to be completed_
-- **Reward System (Kenaz Shidqi Baswara):** _to be completed_
 - **Task Dispatch System (Sorush Baghertash):** _to be completed_
 
 ---
