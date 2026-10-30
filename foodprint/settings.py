@@ -24,15 +24,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1#*xon0oysi)s*%dlu#3s0i5ioc$p@giy&pg#te5+*$-(&yyjp'
+# The fallback is the old, already-public development key; production must set SECRET_KEY.
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-1#*xon0oysi)s*%dlu#3s0i5ioc$p@giy&pg#te5+*$-(&yyjp')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = not PRODUCTION
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "delitha-theodora-foodprint.pws.cs.ui.ac.id"]
+CSRF_TRUSTED_ORIGINS = ["https://delitha-theodora-foodprint.pws.cs.ui.ac.id"]
 
-PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
+if PRODUCTION:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 # Application definition
@@ -53,7 +59,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
