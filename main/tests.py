@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -483,3 +485,202 @@ class RegisterRoleTests(TestCase):
         self.assertRedirects(res, reverse("admin:main_profile_changelist"))
         profile.refresh_from_db()
         self.assertEqual(profile.role, "OFFICIAL")
+
+
+class SharedNavbarTests(TestCase):
+    """Every page, including the landing page, renders the same shared navbar."""
+
+    def setUp(self):
+        self.official = User.objects.create_user("officer", password="pass12345")
+        Profile.objects.create(user=self.official, role="OFFICIAL")
+        self.citizen = User.objects.create_user("citizen", password="pass12345")
+        Profile.objects.create(user=self.citizen, role="USERS")
+
+    def navbar(self, url):
+        html = self.client.get(url).content.decode()
+        self.assertEqual(html.count('<header class="navbar">'), 1)
+        block = re.search(r'<header class="navbar">.*?</header>', html, re.S).group(0)
+        # Ignore the parts that legitimately change per page
+        block = re.sub(r' navbar__link--active| aria-current="page"|name="next" value="[^"]*"', "", block)
+        return re.sub(r'name="csrfmiddlewaretoken" value="[^"]*"', "", block)
+
+    def test_landing_page_uses_the_shared_navbar(self):
+        for user in (None, self.citizen, self.official):
+            with self.subTest(user=user):
+                if user:
+                    self.client.force_login(user)
+                self.assertEqual(self.navbar(reverse("main:landing")), self.navbar(reverse("main:report_map")))
+
+    def test_landing_page_marks_home_active(self):
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(
+            res, f'<a href="{reverse("main:landing")}" class="navbar__link navbar__link--active" aria-current="page">Home</a>', html=True,
+        )
+
+    def test_account_controls_are_grouped_in_one_menu(self):
+        self.client.force_login(self.official)
+        res = self.client.get(reverse("main:report_map"))
+        menu = re.search(r'<details class="navbar__account">.*?</details>', res.content.decode(), re.S).group(0)
+        self.assertIn(f'href="{reverse("main:update_profile")}"', menu)
+        self.assertIn(f'action="{reverse("main:toggle_rank")}"', menu)
+        self.assertIn(f'href="{reverse("main:logout")}"', menu)
+        self.assertNotContains(res, "navbar__cta")
+
+    def test_role_specific_links(self):
+        tasks, analytics = reverse("dispatch:pending_reports"), reverse("analytics:show_analytics")
+        self.client.force_login(self.official)
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, f'<a href="{tasks}" class="navbar__link">Tasks</a>', html=True)
+        self.assertContains(res, f'<a href="{analytics}" class="navbar__link">Analytics</a>', html=True)
+        self.client.force_login(self.citizen)
+        res = self.client.get(reverse("main:report_map"))
+        self.assertNotContains(res, ">Tasks</a>")
+        self.assertNotContains(res, ">Analytics</a>")
+
+    def test_anonymous_sees_log_in_instead_of_account_menu(self):
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, f'<a href="{reverse("main:login")}" class="btn btn--outline navbar__cta">Log in</a>', html=True)
+        self.assertNotContains(res, '<details class="navbar__account">')
+
+
+class LandingPageContentTests(TestCase):
+    """The landing page shows real data and only links to pages that exist."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS")
+
+    def test_report_counts_come_from_the_database(self):
+        for status in ("REPORTED", "REPORTED", "RESOLVED"):
+            WasteReport.objects.create(reporter=self.user, title="Rice", latitude=0, longitude=0, status=status)
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, '<span class="card__number" data-count-to="3">3</span>', html=True)
+        self.assertContains(res, "1 resolved")
+
+    def test_latest_articles_are_listed(self):
+        from educational_hub.models import Article
+        titles = ["First guide", "Second guide", "Third guide", "Fourth guide"]
+        for title in titles:
+            Article.objects.create(author=self.user, title=title, content="x" * 60)
+        res = self.client.get(reverse("main:landing"))
+        for article in Article.objects.filter(title__in=titles[1:]):
+            self.assertContains(res, f'href="{article.get_absolute_url()}"')
+        self.assertNotContains(res, "First guide")
+
+    def test_empty_learn_section_invites_a_first_article(self):
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, f'href="{reverse("education:article_create")}"')
+
+    def test_hero_offers_report_and_learn_actions(self):
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, f'href="{reverse("main:report_map")}#rp-form-card" class="btn btn--light"')
+        self.assertContains(res, f'href="{reverse("education:article_list")}" class="btn btn--outline"')
+
+    def test_task_dispatch_card_links_only_for_officials(self):
+        card_link = f'<a href="{reverse("dispatch:pending_reports")}" class="feature-card">'
+        self.assertNotContains(self.client.get(reverse("main:landing")), card_link)
+        official = User.objects.create_user("officer", password="pass12345")
+        Profile.objects.create(user=official, role="OFFICIAL")
+        self.client.force_login(official)
+        self.assertContains(self.client.get(reverse("main:landing")), card_link)
+
+    def test_every_internal_link_resolves(self):
+        from django.urls import resolve
+        html = self.client.get(reverse("main:landing")).content.decode()
+        paths = {href.split("#")[0].split("?")[0] for href in re.findall(r'href="(/[^"]*)"', html)}
+        for path in paths - {""}:
+            if not path.startswith("/static/"):
+                with self.subTest(path=path):
+                    resolve(path)
+
+
+class LandingMotionTests(TestCase):
+    """Animations are progressive: the served HTML never starts hidden."""
+
+    def test_content_is_visible_without_javascript(self):
+        html = self.client.get(reverse("main:landing")).content.decode()
+        self.assertIn("data-reveal-group", html)
+        # reveal-ready (the class that hides content until it scrolls in) is only added by landing.js
+        self.assertNotIn("reveal-ready", html)
+        self.assertNotIn("opacity: 0", html)
+
+    def test_count_up_starts_from_the_real_number(self):
+        user = User.objects.create_user("alice", password="pass12345")
+        WasteReport.objects.create(reporter=user, title="Rice", latitude=0, longitude=0)
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, '<span class="card__number" data-count-to="1">1</span>', html=True)
+
+    def test_landing_script_is_loaded(self):
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, "js/landing.js")
+        self.assertContains(res, 'id="landing-chart-data"')
+
+
+class LoginRequiredRedirectTests(TestCase):
+    """Protected pages send visitors to login with a notice, then back where they were going."""
+
+    NOTICE = "Please log in first to continue"
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS")
+        self.login_url = reverse("main:login")
+
+    def test_protected_pages_redirect_to_login_with_notice(self):
+        for url in (
+            reverse("main:dashboard_router"),
+            reverse("main:show_reward"),
+            reverse("main:update_profile"),
+            reverse("education:article_create"),
+            reverse("dispatch:pending_reports"),
+        ):
+            with self.subTest(url=url):
+                res = self.client.get(url, follow=True)
+                self.assertRedirects(res, f"{self.login_url}?next={url}")
+                self.assertContains(res, self.NOTICE)
+                self.assertContains(res, f'<input type="hidden" name="next" value="{url}">', html=True)
+
+    def test_plain_login_page_has_no_notice(self):
+        self.assertNotContains(self.client.get(self.login_url), self.NOTICE)
+
+    def test_navbar_dashboard_link_lets_login_required_add_next(self):
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(
+            res, f'<a href="{reverse("main:dashboard_router")}" class="navbar__link">Dashboard</a>', html=True
+        )
+
+    def test_invalid_credentials_keep_destination_without_notice(self):
+        res = self.client.post(self.login_url, {"username": "alice", "password": "wrong", "next": "/rewards/"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, '<input type="hidden" name="next" value="/rewards/">', html=True)
+        self.assertNotContains(res, self.NOTICE)
+        self.assertTrue(res.context["form"].errors)
+
+    def test_login_returns_to_intended_page(self):
+        res = self.client.post(self.login_url, {"username": "alice", "password": "pass12345", "next": "/rewards/"})
+        self.assertRedirects(res, reverse("main:show_reward"))
+
+    def test_login_without_destination_goes_home(self):
+        res = self.client.post(self.login_url, {"username": "alice", "password": "pass12345"})
+        self.assertRedirects(res, reverse("main:landing"))
+
+    def test_external_destinations_are_ignored(self):
+        for bad in ("https://evil.example/", "//evil.example/", "javascript:alert(1)"):
+            with self.subTest(next=bad):
+                page = self.client.get(self.login_url, {"next": bad})
+                self.assertNotContains(page, "evil.example")
+                self.assertNotContains(page, self.NOTICE)
+                res = self.client.post(self.login_url, {"username": "alice", "password": "pass12345", "next": bad})
+                self.assertRedirects(res, reverse("main:landing"))
+                self.client.logout()
+
+    def test_authenticated_user_reaches_allowed_page_without_notice(self):
+        self.client.force_login(self.user)
+        res = self.client.get(reverse("main:show_reward"))
+        self.assertEqual(res.status_code, 200)
+        self.assertNotContains(res, self.NOTICE)
+
+    def test_authenticated_user_without_permission_still_gets_403(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("main:official_dashboard")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("dispatch:pending_reports")).status_code, 403)

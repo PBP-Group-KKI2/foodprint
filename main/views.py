@@ -18,6 +18,8 @@ from .models import WasteReport, Profile
 
 from django.utils.http import url_has_allowed_host_and_scheme
 from rewards.views import award_points
+from educational_hub.models import Article
+from task_dispatch.models import is_dispatcher
 
 
 def show_landing(request):
@@ -38,6 +40,10 @@ def show_landing(request):
     context = {
         "last_login": last_login,
         "chart_data": chart_data,
+        "report_count": WasteReport.objects.count(),
+        "resolved_count": WasteReport.objects.filter(status=WasteReport.Status.RESOLVED).count(),
+        "latest_articles": Article.objects.select_related("author")[:3],
+        "can_dispatch": is_dispatcher(request.user),
     }
     return render(request, "landing_page.html", context)
 
@@ -69,16 +75,25 @@ def register(request):
 def login_user(request):
     form = AuthenticationForm(request, data=request.POST or None)
 
+    # login_required adds ?next=; only same-site paths are kept to avoid open redirects
+    next_url = request.POST.get("next") or request.GET.get("next", "")
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = ""
+
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
         login(request, user)
-        response = redirect("main:landing")
+        response = redirect(next_url or "main:landing")
         response.set_cookie('last_login', datetime.datetime.now().strftime('%d-%m %Y [%H:%M:%S]'))
         return response
 
     context = {
         "name": "Foodprint",
         "form": form,
+        "next": next_url,
+        "login_required_notice": request.method == "GET" and bool(next_url),
     }
     return render(request, "login.html", context)
 

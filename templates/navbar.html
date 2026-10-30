@@ -30,24 +30,33 @@
         {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
         <li><a href="{% url 'education:article_list' %}" class="navbar__link{% if ns == 'education' %} navbar__link--active{% endif %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
         <li><a href="{% url 'main:show_reward' %}" class="navbar__link{% if view_name == 'main:show_reward' %} navbar__link--active{% endif %}"{% if view_name == 'main:show_reward' %} aria-current="page"{% endif %}>Rewards</a></li>
-        <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link{% if 'dashboard' in view_name %} navbar__link--active{% endif %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
+        <li><a href="{% url 'main:dashboard_router' %}" class="navbar__link{% if 'dashboard' in view_name %} navbar__link--active{% endif %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
       </ul>
     </nav>
 
     <div class="navbar__actions">
       {% if user.is_authenticated %}
-        <a href="{% url 'main:logout' %}" class="btn btn--outline navbar__cta">Log out</a>
-        <a href="{% url 'main:update_profile' %}" class="navbar__profile" title="Edit Profil ({{ user.username }})">{{ user.username|slice:":1"|upper }}</a>
-        {% if user.profile.show_rank %}
-          <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
-        {% endif %}
-        <form method="post" action="{% url 'main:toggle_rank' %}" class="rank-toggle">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <button type="submit" class="rank-toggle__btn">
-            {% if user.profile.show_rank %}Hide rank{% else %}Show rank{% endif %}
-          </button>
-        </form>
+        {# Account controls share one menu so the bar stays readable with every role's links #}
+        <details class="navbar__account">
+          <summary class="navbar__account-toggle" aria-label="Account menu for {{ user.username }}">
+            <span class="navbar__profile" aria-hidden="true">{{ user.username|slice:":1"|upper }}</span>
+            {% if user.profile.show_rank %}
+              <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
+            {% endif %}
+          </summary>
+          <div class="navbar__account-menu">
+            <p class="navbar__account-name">{{ user.username }}</p>
+            <a href="{% url 'main:update_profile' %}" class="navbar__account-item">Edit profile</a>
+            <form method="post" action="{% url 'main:toggle_rank' %}" class="rank-toggle">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" class="navbar__account-item">
+                {% if user.profile.show_rank %}Hide rank{% else %}Show rank{% endif %}
+              </button>
+            </form>
+            <a href="{% url 'main:logout' %}" class="navbar__account-item">Log out</a>
+          </div>
+        </details>
       {% else %}
         <a href="{% url 'main:login' %}" class="btn btn--outline navbar__cta">Log in</a>
       {% endif %}
@@ -68,7 +77,7 @@
       {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
       <li><a href="{% url 'education:article_list' %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
       <li><a href="{% url 'main:show_reward' %}"{% if view_name == 'main:show_reward' %} aria-current="page"{% endif %}>Rewards</a></li>
-      <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
+      <li><a href="{% url 'main:dashboard_router' %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
       {% if user.is_authenticated %}
         <li><a href="{% url 'main:logout' %}">Log out</a></li>
       {% else %}

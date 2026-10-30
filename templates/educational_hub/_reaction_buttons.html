@@ -1,4 +1,5 @@
-{# Real POST forms so they work without JS. hx-sync drops extra clicks mid-request. #}
+{# Real POST forms so they work without JS. hx-sync drops extra clicks mid-request;
+   educational_hub.js flips the button instantly and the server response confirms it. #}
 <div class="educational-hub__reactions" id="educational-hub-reactions-{{ article.pk }}">
   {% if user.is_authenticated %}
     <form method="post" action="{% url 'education:toggle_like' article.pk %}"
@@ -12,7 +13,7 @@
               aria-pressed="{{ article.is_liked|yesno:'true,false' }}"
               aria-label="{% if article.is_liked %}Unlike{% else %}Like{% endif %} this article ({{ article.like_count }} like{{ article.like_count|pluralize }})">
         <svg class="educational-hub__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
-        <span>{% if article.is_liked %}Liked{% else %}Like{% endif %}</span>
+        <span data-on-label="Liked" data-off-label="Like">{% if article.is_liked %}Liked{% else %}Like{% endif %}</span>
         <span class="educational-hub__reaction-count">{{ article.like_count }}</span>
       </button>
     </form>
@@ -28,7 +29,7 @@
               aria-pressed="{{ article.is_favorited|yesno:'true,false' }}"
               aria-label="{% if article.is_favorited %}Remove this article from your saved list{% else %}Save this article to read later{% endif %}">
         <svg class="educational-hub__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h11v17L12 16.6l-5.5 3.9Z"/></svg>
-        <span>{% if article.is_favorited %}Saved{% else %}Save{% endif %}</span>
+        <span data-on-label="Saved" data-off-label="Save">{% if article.is_favorited %}Saved{% else %}Save{% endif %}</span>
       </button>
     </form>
   {% else %}

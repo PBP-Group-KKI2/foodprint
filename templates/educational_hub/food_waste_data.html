@@ -1,0 +1,54 @@
+{% extends 'educational_hub/_layout.html' %}
+
+{% block page_title %}Global food waste data{% endblock page_title %}
+{% block meta_description %}Food wasted per person in each country, from the UN SDG 12.3.1 dataset.{% endblock meta_description %}
+
+{% block hub_content %}
+<section class="section educational-hub__intro">
+  <div class="container">
+    <p class="section-label">Educational Hub</p>
+    <h1 class="section-title educational-hub__heading">How much food does each country waste?</h1>
+    <p class="educational-hub__lead">
+      Kilograms of food wasted per person each year at home, in shops, and in restaurants and canteens.
+      Figures come from the UN Environment Programme's Food Waste Index (SDG 12.3.1), published by Our World in Data.
+    </p>
+
+    {% include 'educational_hub/_hub_tabs.html' with active='data' %}
+
+    <form class="educational-hub__filters educational-hub__data-filters"
+          method="get"
+          action="{{ request.path }}"
+          role="search"
+          hx-get="{{ request.path }}"
+          hx-target="#educational-hub-data-results"
+          hx-trigger="input changed delay:400ms from:input[type=search], change from:select, submit"
+          hx-sync="this:replace"
+          hx-push-url="true"
+          hx-indicator="#educational-hub-data-results">
+      <div class="educational-hub__search">
+        <label for="{{ form.q.id_for_label }}" class="educational-hub__sr-only">{{ form.q.label }}</label>
+        {{ form.q }}
+        <button type="submit" class="btn btn--primary educational-hub__search-btn">Search</button>
+      </div>
+      <div class="educational-hub__data-selects">
+        <div class="educational-hub__field">
+          <label for="{{ form.scope.id_for_label }}">Show</label>
+          {{ form.scope }}
+        </div>
+        <div class="educational-hub__field">
+          <label for="{{ form.year.id_for_label }}">Year</label>
+          {{ form.year }}
+        </div>
+        <div class="educational-hub__field">
+          <label for="{{ form.sort.id_for_label }}">{{ form.sort.label }}</label>
+          {{ form.sort }}
+        </div>
+      </div>
+    </form>
+
+    <div id="educational-hub-data-results" class="educational-hub__results" aria-live="polite">
+      {% include 'educational_hub/_food_waste_results.html' %}
+    </div>
+  </div>
+</section>
+{% endblock hub_content %}

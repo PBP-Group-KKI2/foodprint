@@ -1,5 +1,6 @@
 /* FoodPrint – Educational Hub
- * HTMX sends the requests; this file shows errors and opens the delete modal.
+ * HTMX sends the requests; this file shows errors, opens the delete modal,
+ * and updates Like/Save buttons optimistically.
  */
 (function () {
   "use strict";
@@ -19,6 +20,7 @@
     if (status === 401) return "Please log in to do that.";
     if (status === 403) return "You don't have permission to do that.";
     if (status === 404) return "That article no longer exists.";
+    if (status === 429) return "You're doing that too many times. Please wait a moment and try again.";
     return "Something went wrong. Please try again.";
   }
 
@@ -58,5 +60,33 @@
   document.body.addEventListener("htmx:afterRequest", function (e) {
     var target = e.detail.target;
     if (target && target.isConnected) target.removeAttribute("aria-busy");
+  });
+
+  // Optimistic Like/Save: flip the button as soon as it is clicked. A successful
+  // response swaps in the server's version; a failed one flips it back.
+  function reactionButton(elt) {
+    var form = elt && elt.closest && elt.closest(".educational-hub__reactions form");
+    return form ? form.querySelector(".educational-hub__reaction") : null;
+  }
+
+  function flip(button) {
+    var on = button.getAttribute("aria-pressed") !== "true";
+    button.setAttribute("aria-pressed", String(on));
+    button.classList.toggle("educational-hub__reaction--active", on);
+    var label = button.querySelector("[data-on-label]");
+    if (label) label.textContent = on ? label.dataset.onLabel : label.dataset.offLabel;
+    var count = button.querySelector(".educational-hub__reaction-count");
+    if (count) count.textContent = Math.max(0, parseInt(count.textContent, 10) + (on ? 1 : -1));
+  }
+
+  document.body.addEventListener("htmx:beforeRequest", function (e) {
+    var button = reactionButton(e.detail.elt);
+    if (button) flip(button);
+  });
+  ["htmx:responseError", "htmx:sendError"].forEach(function (name) {
+    document.body.addEventListener(name, function (e) {
+      var button = reactionButton(e.detail.elt);
+      if (button && button.isConnected) flip(button);
+    });
   });
 })();

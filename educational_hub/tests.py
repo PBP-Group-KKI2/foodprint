@@ -1,3 +1,6 @@
+from unittest import mock
+from urllib.error import URLError
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
@@ -6,6 +9,8 @@ from django.urls import reverse
 
 from main.models import Profile
 
+from .food_waste_data import FRESH_KEY, get_food_waste_data
+from .views import ARTICLE_RATE_LIMIT, LIKE_RATE_LIMIT
 from .models import Article, Comment, Favorite, Like
 
 HTMX = {"HTTP_HX_REQUEST": "true"}
@@ -308,3 +313,266 @@ class EducationalHubTests(TestCase):
     def test_navbar_marks_learn_active_on_hub(self):
         res = self.client.get(reverse("education:article_list"))
         self.assertContains(res, f'href="{reverse("education:article_list")}" class="navbar__link navbar__link--active"')
+
+
+# ---------- global food waste data (public API) ----------
+
+SAMPLE_CSV = (
+    "entity,code,year,_12_3_1__ag_food_wst_pc__retail,"
+    "_12_3_1__ag_food_wst_pc__out_of_home_consumption,_12_3_1__ag_food_wst_pc__households\n"
+    "Indonesia,IDN,2019,15.7,27.76,77.67\n"
+    "Indonesia,IDN,2022,49.93,40.11,53.46\n"
+    "Brazil,BRA,2022,10,20,94\n"
+    "World,OWID_WRL,2022,16.45,36.34,79.12\n"
+    "Asia (UN),UN_ASI,2022,14,30,\n"
+)
+
+
+class FakeResponse:
+    def __init__(self, body):
+        self.body = body.encode()
+
+    def read(self):
+        return self.body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+class FoodWasteDataTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.url = reverse("education:food_waste_data")
+
+    def fetch(self, body=SAMPLE_CSV):
+        return mock.patch("educational_hub.food_waste_data.urlopen", return_value=FakeResponse(body))
+
+    def test_rows_are_parsed(self):
+        with self.fetch():
+            data = get_food_waste_data()
+        self.assertTrue(data.available)
+        self.assertFalse(data.stale)
+        brazil = next(r for r in data.rows if r.entity == "Brazil")
+        self.assertEqual((brazil.year, brazil.households, brazil.total), (2022, 94.0, 124.0))
+        self.assertFalse(brazil.is_region)
+        asia = next(r for r in data.rows if r.entity == "Asia (UN)")
+        self.assertTrue(asia.is_region)
+        self.assertIsNone(asia.households)
+        self.assertIsNone(asia.total)
+
+    def test_second_call_uses_the_cache(self):
+        with self.fetch() as urlopen:
+            get_food_waste_data()
+            get_food_waste_data()
+        self.assertEqual(urlopen.call_count, 1)
+
+    def test_outage_falls_back_to_last_good_copy(self):
+        with self.fetch():
+            get_food_waste_data()
+        cache.delete(FRESH_KEY)
+        with mock.patch("educational_hub.food_waste_data.urlopen", side_effect=URLError("down")):
+            data = get_food_waste_data()
+        self.assertTrue(data.available)
+        self.assertTrue(data.stale)
+
+    def test_outage_without_copy_shows_friendly_message(self):
+        with mock.patch("educational_hub.food_waste_data.urlopen", side_effect=URLError("down")):
+            res = self.client.get(self.url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "The data source is unavailable right now")
+
+    def test_malformed_response_is_treated_as_an_outage(self):
+        with self.fetch("not,a,dataset\n1,2,3\n"):
+            res = self.client.get(self.url)
+        self.assertContains(res, "The data source is unavailable right now")
+
+    def test_page_defaults_to_latest_year_countries_sorted_by_total(self):
+        with self.fetch():
+            res = self.client.get(self.url)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual([r.entity for r in res.context["rows"]], ["Indonesia", "Brazil"])
+        self.assertContains(res, "Our World in Data")
+
+    def test_filters(self):
+        cases = [
+            ({"q": "bra"}, ["Brazil"]),
+            ({"year": "2019"}, ["Indonesia"]),
+            ({"scope": "regions"}, ["World", "Asia (UN)"]),
+            ({"sort": "households"}, ["Brazil", "Indonesia"]),
+        ]
+        for params, expected in cases:
+            with self.subTest(params=params), self.fetch():
+                res = self.client.get(self.url, params)
+                self.assertEqual([r.entity for r in res.context["rows"]], expected)
+
+    def test_invalid_filters_fall_back_to_defaults(self):
+        with self.fetch():
+            res = self.client.get(self.url, {"year": "1800", "sort": "evil", "scope": "x"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual([r.entity for r in res.context["rows"]], ["Indonesia", "Brazil"])
+
+    def test_htmx_returns_only_the_results(self):
+        with self.fetch():
+            res = self.client.get(self.url, {"q": "indo"}, **HTMX)
+        self.assertTemplateUsed(res, "educational_hub/_food_waste_results.html")
+        self.assertTemplateNotUsed(res, "educational_hub/food_waste_data.html")
+        self.assertIn("HX-Request", res["Vary"])
+
+
+# ---------- security decorators ----------
+
+class SecurityDecoratorTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.alice = User.objects.create_user("alice", password="pass12345")
+        self.bob = User.objects.create_user("bob", password="pass12345")
+        self.staff = User.objects.create_user("staff", password="pass12345", is_staff=True)
+        self.article = Article.objects.create(author=self.alice, title="Composting basics", content=LONG_TEXT)
+        self.edit_url = reverse("education:article_update", args=[self.article.pk])
+        self.delete_url = reverse("education:article_delete", args=[self.article.pk])
+        self.like_url = reverse("education:toggle_like", args=[self.article.pk])
+
+    def test_manager_required_allows_owner_and_staff_only(self):
+        for user, expected in ((self.alice, 200), (self.staff, 200), (self.bob, 403)):
+            with self.subTest(user=user.username):
+                self.client.force_login(user)
+                self.assertEqual(self.client.get(self.edit_url).status_code, expected)
+                self.assertEqual(self.client.get(self.delete_url).status_code, expected)
+
+    def test_manager_required_redirects_anonymous_and_404s_missing_articles(self):
+        self.assertRedirects(self.client.get(self.edit_url), f"{reverse('main:login')}?next={self.edit_url}")
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.get(reverse("education:article_update", args=[9999])).status_code, 404)
+
+    def test_likes_are_rate_limited_per_user(self):
+        limit, _ = LIKE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for _ in range(limit):
+            self.assertEqual(self.client.post(self.like_url, **HTMX).status_code, 200)
+        res = self.client.post(self.like_url, **HTMX)
+        self.assertEqual(res.status_code, 429)
+        self.assertIn("too many", res.content.decode().lower())
+
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.post(self.like_url, **HTMX).status_code, 200)
+
+    def test_article_creation_is_rate_limited_without_htmx(self):
+        limit, _ = ARTICLE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for i in range(limit):
+            self.client.post(reverse("education:article_create"), {
+                "title": f"Sorting guide number {i}", "category": "SORTING", "summary": "", "content": LONG_TEXT,
+            })
+        res = self.client.post(reverse("education:article_create"), {
+            "title": "One article too many", "category": "SORTING", "summary": "", "content": LONG_TEXT,
+        }, follow=True)
+        self.assertFalse(Article.objects.filter(title="One article too many").exists())
+        self.assertContains(res, "too many")
+
+    def test_get_requests_are_not_limited(self):
+        limit, _ = ARTICLE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for _ in range(limit + 3):
+            self.assertEqual(self.client.get(reverse("education:article_create")).status_code, 200)
+
+    def test_rate_limit_redirect_ignores_external_referer(self):
+        limit, _ = LIKE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for _ in range(limit):
+            self.client.post(self.like_url)
+        res = self.client.post(self.like_url, HTTP_REFERER="https://evil.example/")
+        self.assertRedirects(res, reverse("education:article_list"), fetch_redirect_response=False)
+
+
+# ---------- edge cases and negative paths ----------
+
+class EdgeCaseTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.alice = User.objects.create_user("alice", password="pass12345")
+        self.article = Article.objects.create(author=self.alice, title="Composting basics", content=LONG_TEXT)
+        self.client.force_login(self.alice)
+        self.comment_url = reverse("education:comment_create", args=[self.article.pk])
+
+    def test_title_shorter_than_five_characters_is_rejected(self):
+        res = self.client.post(reverse("education:article_create"), {
+            "title": "Tip", "category": "BASICS", "summary": "", "content": LONG_TEXT,
+        })
+        self.assertContains(res, "Title must be at least 5 characters.")
+        self.assertFalse(Article.objects.filter(title="Tip").exists())
+
+    def test_comment_length_limits(self):
+        for content, error in (("a", "Comment is too short."), ("a" * 1001, "1000 characters or fewer")):
+            with self.subTest(length=len(content)):
+                cache.clear()
+                res = self.client.post(self.comment_url, {"content": content}, **HTMX)
+                self.assertContains(res, error)
+        self.assertEqual(Comment.objects.count(), 0)
+
+    def test_invalid_comment_without_htmx_redirects_with_error(self):
+        res = self.client.post(self.comment_url, {"content": "a"}, follow=True)
+        self.assertRedirects(res, f"{self.article.get_absolute_url()}#comments")
+        self.assertContains(res, "Comment is too short.")
+
+    def test_simultaneous_duplicate_publish_shows_form_error(self):
+        # Two identical submissions can both pass clean_title; the database constraint stops the second.
+        with mock.patch.object(Article, "save", side_effect=IntegrityError):
+            res = self.client.post(reverse("education:article_create"), {
+                "title": "Racing duplicate", "category": "BASICS", "summary": "", "content": LONG_TEXT,
+            })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "You already published an article with this title.")
+
+    def test_rate_limit_redirects_back_to_same_site_referer(self):
+        like_url = reverse("education:toggle_like", args=[self.article.pk])
+        limit, _ = LIKE_RATE_LIMIT
+        for _ in range(limit):
+            self.client.post(like_url)
+        referer = f"http://testserver{self.article.get_absolute_url()}"
+        res = self.client.post(like_url, HTTP_REFERER=referer)
+        self.assertRedirects(res, referer)
+
+    def test_rate_limit_survives_window_expiring_between_calls(self):
+        like_url = reverse("education:toggle_like", args=[self.article.pk])
+        with mock.patch("educational_hub.decorators.cache.incr", side_effect=ValueError):
+            self.assertEqual(self.client.post(like_url, **HTMX).status_code, 200)
+
+    def test_admin_labels(self):
+        comment = Comment.objects.create(article=self.article, author=self.alice, content="Nice guide")
+        like = Like.objects.create(article=self.article, user=self.alice)
+        favorite = Favorite.objects.create(article=self.article, user=self.alice)
+        self.assertEqual(str(self.article), "Composting basics")
+        self.assertEqual(str(comment), "alice on Composting basics")
+        self.assertEqual(str(like), "alice likes Composting basics")
+        self.assertEqual(str(favorite), "alice saved Composting basics")
+
+
+class HubTabsTests(TestCase):
+    """Every Hub list page shares the same section tabs."""
+
+    def active_tab(self, label, url_name):
+        return f'<a href="{reverse(url_name)}" class="educational-hub__tab educational-hub__tab--active" aria-current="page">{label}</a>'
+
+    def test_tabs_mark_the_current_section(self):
+        user = User.objects.create_user("alice", password="pass12345")
+        self.client.force_login(user)
+        with mock.patch("educational_hub.food_waste_data.urlopen", return_value=FakeResponse(SAMPLE_CSV)):
+            pages = [
+                ("education:article_list", "Articles"),
+                ("education:saved_articles", "Saved"),
+                ("education:food_waste_data", "Global data"),
+            ]
+            for url_name, label in pages:
+                with self.subTest(page=url_name):
+                    res = self.client.get(reverse(url_name))
+                    self.assertContains(res, self.active_tab(label, url_name), html=True)
+                    self.assertContains(res, 'class="educational-hub__tab"', count=2)
+
+    def test_saved_tab_is_only_for_logged_in_users(self):
+        res = self.client.get(reverse("education:article_list"))
+        self.assertNotContains(res, reverse("education:saved_articles"))
+        self.assertContains(res, f'href="{reverse("education:food_waste_data")}" class="educational-hub__tab"')
+        self.assertContains(res, "Log in to write")
