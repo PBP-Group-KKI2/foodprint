@@ -1,3 +1,6 @@
+from unittest import mock
+from urllib.error import URLError
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
@@ -6,6 +9,7 @@ from django.urls import reverse
 
 from main.models import Profile
 
+from .food_waste_data import FRESH_KEY, get_food_waste_data
 from .models import Article, Comment, Favorite, Like
 
 HTMX = {"HTTP_HX_REQUEST": "true"}
@@ -308,3 +312,110 @@ class EducationalHubTests(TestCase):
     def test_navbar_marks_learn_active_on_hub(self):
         res = self.client.get(reverse("education:article_list"))
         self.assertContains(res, f'href="{reverse("education:article_list")}" class="navbar__link navbar__link--active"')
+
+
+# ---------- global food waste data (public API) ----------
+
+SAMPLE_CSV = (
+    "entity,code,year,_12_3_1__ag_food_wst_pc__retail,"
+    "_12_3_1__ag_food_wst_pc__out_of_home_consumption,_12_3_1__ag_food_wst_pc__households\n"
+    "Indonesia,IDN,2019,15.7,27.76,77.67\n"
+    "Indonesia,IDN,2022,49.93,40.11,53.46\n"
+    "Brazil,BRA,2022,10,20,94\n"
+    "World,OWID_WRL,2022,16.45,36.34,79.12\n"
+    "Asia (UN),UN_ASI,2022,14,30,\n"
+)
+
+
+class FakeResponse:
+    def __init__(self, body):
+        self.body = body.encode()
+
+    def read(self):
+        return self.body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+class FoodWasteDataTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.url = reverse("education:food_waste_data")
+
+    def fetch(self, body=SAMPLE_CSV):
+        return mock.patch("educational_hub.food_waste_data.urlopen", return_value=FakeResponse(body))
+
+    def test_rows_are_parsed(self):
+        with self.fetch():
+            data = get_food_waste_data()
+        self.assertTrue(data.available)
+        self.assertFalse(data.stale)
+        brazil = next(r for r in data.rows if r.entity == "Brazil")
+        self.assertEqual((brazil.year, brazil.households, brazil.total), (2022, 94.0, 124.0))
+        self.assertFalse(brazil.is_region)
+        asia = next(r for r in data.rows if r.entity == "Asia (UN)")
+        self.assertTrue(asia.is_region)
+        self.assertIsNone(asia.households)
+        self.assertIsNone(asia.total)
+
+    def test_second_call_uses_the_cache(self):
+        with self.fetch() as urlopen:
+            get_food_waste_data()
+            get_food_waste_data()
+        self.assertEqual(urlopen.call_count, 1)
+
+    def test_outage_falls_back_to_last_good_copy(self):
+        with self.fetch():
+            get_food_waste_data()
+        cache.delete(FRESH_KEY)
+        with mock.patch("educational_hub.food_waste_data.urlopen", side_effect=URLError("down")):
+            data = get_food_waste_data()
+        self.assertTrue(data.available)
+        self.assertTrue(data.stale)
+
+    def test_outage_without_copy_shows_friendly_message(self):
+        with mock.patch("educational_hub.food_waste_data.urlopen", side_effect=URLError("down")):
+            res = self.client.get(self.url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "The data source is unavailable right now")
+
+    def test_malformed_response_is_treated_as_an_outage(self):
+        with self.fetch("not,a,dataset\n1,2,3\n"):
+            res = self.client.get(self.url)
+        self.assertContains(res, "The data source is unavailable right now")
+
+    def test_page_defaults_to_latest_year_countries_sorted_by_total(self):
+        with self.fetch():
+            res = self.client.get(self.url)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual([r.entity for r in res.context["rows"]], ["Indonesia", "Brazil"])
+        self.assertContains(res, "Our World in Data")
+
+    def test_filters(self):
+        cases = [
+            ({"q": "bra"}, ["Brazil"]),
+            ({"year": "2019"}, ["Indonesia"]),
+            ({"scope": "regions"}, ["World", "Asia (UN)"]),
+            ({"sort": "households"}, ["Brazil", "Indonesia"]),
+        ]
+        for params, expected in cases:
+            with self.subTest(params=params), self.fetch():
+                res = self.client.get(self.url, params)
+                self.assertEqual([r.entity for r in res.context["rows"]], expected)
+
+    def test_invalid_filters_fall_back_to_defaults(self):
+        with self.fetch():
+            res = self.client.get(self.url, {"year": "1800", "sort": "evil", "scope": "x"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual([r.entity for r in res.context["rows"]], ["Indonesia", "Brazil"])
+
+    def test_htmx_returns_only_the_results(self):
+        with self.fetch():
+            res = self.client.get(self.url, {"q": "indo"}, **HTMX)
+        self.assertTemplateUsed(res, "educational_hub/_food_waste_results.html")
+        self.assertTemplateNotUsed(res, "educational_hub/food_waste_data.html")
+        self.assertIn("HX-Request", res["Vary"])

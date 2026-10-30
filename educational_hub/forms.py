@@ -83,3 +83,33 @@ class ArticleFilterForm(forms.Form):
         required=False,
         choices=[("", "All topics")] + list(Article.Category.choices),
     )
+
+
+class FoodWasteFilterForm(forms.Form):
+    """Filters for the public food waste table. Year choices come from the fetched data."""
+
+    q = forms.CharField(
+        required=False,
+        max_length=100,
+        label="Search countries and regions",
+        widget=forms.TextInput(attrs={"placeholder": "Search a country or region", "type": "search"}),
+    )
+    scope = forms.ChoiceField(
+        required=False,
+        choices=[("countries", "Countries"), ("regions", "Regions & world")],
+    )
+    year = forms.TypedChoiceField(required=False, coerce=int, empty_value=None)
+    sort = forms.ChoiceField(
+        required=False,
+        label="Sort by",
+        choices=[
+            ("total", "Total"),
+            ("households", "Households"),
+            ("out_of_home", "Food service"),
+            ("retail", "Retail"),
+        ],
+    )
+
+    def __init__(self, *args, years=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["year"].choices = [(year, year) for year in years]

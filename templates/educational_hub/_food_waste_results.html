@@ -1,0 +1,57 @@
+{% if not data.available %}
+  <div class="educational-hub__empty">
+    <p class="educational-hub__empty-title">The data source is unavailable right now</p>
+    <p class="educational-hub__muted">We couldn't reach Our World in Data. Please try again in a few minutes.</p>
+  </div>
+{% else %}
+  <p class="educational-hub__count">
+    {{ rows|length }} result{{ rows|length|pluralize }} for {{ year }}
+    {% if data.stale %}
+      <span class="educational-hub__notice educational-hub__data-stale">Showing a saved copy from {{ data.fetched_at|date:"j M Y, H:i" }} because the source is unreachable.</span>
+    {% endif %}
+  </p>
+
+  {% if rows %}
+    <div class="educational-hub__table-wrap">
+      <table class="educational-hub__table">
+        <caption class="educational-hub__sr-only">Food waste in kilograms per person per year, {{ year }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Country or region</th>
+            <th scope="col" class="educational-hub__num">Households</th>
+            <th scope="col" class="educational-hub__num">Food service</th>
+            <th scope="col" class="educational-hub__num">Retail</th>
+            <th scope="col" class="educational-hub__num">Total (kg)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <th scope="row">{{ row.entity }}</th>
+              <td class="educational-hub__num">{{ row.households|floatformat:1|default:"–" }}</td>
+              <td class="educational-hub__num">{{ row.out_of_home|floatformat:1|default:"–" }}</td>
+              <td class="educational-hub__num">{{ row.retail|floatformat:1|default:"–" }}</td>
+              <td class="educational-hub__num educational-hub__total">
+                {% if row.total is not None %}
+                  <span class="educational-hub__bar" style="--share: {% widthratio row.total max_total 100 %}" aria-hidden="true"></span>
+                  {{ row.total|floatformat:1 }}
+                {% else %}–{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="educational-hub__empty">
+      <p class="educational-hub__empty-title">No matches</p>
+      <p class="educational-hub__muted">Try another name, year, or switch between countries and regions.</p>
+    </div>
+  {% endif %}
+
+  <p class="educational-hub__source">
+    Source: Food and Agriculture Organization of the United Nations and UN Environment Programme,
+    via <a href="{{ source_page }}" class="educational-hub__text-link" target="_blank" rel="noopener">Our World in Data</a> (CC BY 4.0).
+    {% if data.fetched_at and not data.stale %}Updated {{ data.fetched_at|date:"j M Y, H:i" }}.{% endif %}
+  </p>
+{% endif %}

@@ -14,7 +14,8 @@ from django.utils import timezone
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import ArticleFilterForm, ArticleForm, CommentForm
+from . import food_waste_data
+from .forms import ArticleFilterForm, ArticleForm, CommentForm, FoodWasteFilterForm
 from .models import Article, Comment, Favorite, Like
 
 ARTICLES_PER_PAGE = 9
@@ -264,3 +265,39 @@ def comment_create(request, pk):
         errors = [e for field_errors in form.errors.values() for e in field_errors]
         messages.error(request, " ".join(errors) or "Your comment could not be posted.")
     return redirect(f"{article.get_absolute_url()}#comments")
+
+
+# ============================================================
+# Global food waste data (public API)
+# ============================================================
+
+@require_GET
+def food_waste_data_view(request):
+    data = food_waste_data.get_food_waste_data()
+    years = sorted({row.year for row in data.rows}, reverse=True)
+    form = FoodWasteFilterForm(request.GET or None, years=years)
+    filters = form.cleaned_data if form.is_valid() else {}
+
+    scope = filters.get("scope") or "countries"
+    year = filters.get("year") or (years[0] if years else None)
+    sort = filters.get("sort") or "total"
+    query = (filters.get("q") or "").lower()
+
+    rows = [
+        row for row in data.rows
+        if row.year == year and row.is_region == (scope == "regions") and query in row.entity.lower()
+    ]
+    rows.sort(key=lambda row: (getattr(row, sort) is None, -(getattr(row, sort) or 0)))
+
+    context = {
+        "data": data,
+        "rows": rows,
+        "form": form if form.is_bound else FoodWasteFilterForm(years=years, initial={"year": year}),
+        "year": year,
+        "max_total": max((row.total for row in rows if row.total is not None), default=0),
+        "source_page": food_waste_data.SOURCE_PAGE,
+    }
+    template = "educational_hub/_food_waste_results.html" if _is_htmx(request) else "educational_hub/food_waste_data.html"
+    response = render(request, template, context)
+    patch_vary_headers(response, ["HX-Request"])
+    return response
