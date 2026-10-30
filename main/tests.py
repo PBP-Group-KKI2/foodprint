@@ -344,3 +344,25 @@ class OrganizationDashboardTests(TestCase):
             f'<a href="{reverse("analytics:show_analytics")}" class="dashboard-btn dashboard-btn--outline">View Data Insights</a>',
             html=True,
         )
+
+
+class PlaceholderLinkTests(TestCase):
+    """No link on the shared layout or landing page should still point to "#"."""
+
+    def setUp(self):
+        user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=user, role="USERS")
+
+    def test_no_placeholder_links(self):
+        for logged_in in (False, True):
+            if logged_in:
+                self.client.login(username="alice", password="pass12345")
+            for url_name in ("main:landing", "main:report_map"):
+                with self.subTest(page=url_name, logged_in=logged_in):
+                    self.assertNotContains(self.client.get(reverse(url_name)), 'href="#"')
+
+    def test_landing_feature_cards_link_to_modules(self):
+        res = self.client.get(reverse("main:landing"))
+        for url_name in ("main:report_map", "main:show_reward", "main:dashboard_router"):
+            self.assertContains(res, f'<a href="{reverse(url_name)}" class="feature-card">')
+        self.assertNotContains(res, "Coming soon")

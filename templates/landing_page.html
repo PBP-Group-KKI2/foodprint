@@ -331,7 +331,7 @@
 
         <div class="features__grid">
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'main:report_map' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-report.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Reporting &amp; Mapping</h3>
             <p class="feature-card__text">File waste reports and see them pinned on a live map.</p>
@@ -355,18 +355,16 @@
             <p class="feature-card__text">Explore waste data and trends for planning and campaigns.</p>
           </a>
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'main:show_reward' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-rewards.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Rewards</h3>
             <p class="feature-card__text">Earn points for reports and redeem them at local restaurants.</p>
-            <span class="badge">Coming soon</span>
           </a>
 
-          <a href="#" class="feature-card">
+          <a href="{% url 'main:dashboard_router' %}" class="feature-card">
             <div class="feature-card__media"><img src="{% static 'images/feature-profile.jpg' %}" alt=""></div>
             <h3 class="feature-card__title">Profiles</h3>
             <p class="feature-card__text">Citizens, officials, and organizations each get their own view.</p>
-            <span class="badge">Coming soon</span>
           </a>
 
         </div>
@@ -412,7 +410,7 @@
           <ul>
             <li><a href="{% url 'dispatch:pending_reports' %}">Task dispatch</a></li>
             <li><a href="{% url 'analytics:show_analytics' %}">Dashboard</a></li>
-            <li><a href="#">Rewards</a></li>
+            <li><a href="{% url 'main:show_reward' %}">Rewards</a></li>
           </ul>
         </div>
         <div class="footer__col">
