@@ -96,9 +96,22 @@ My use of AI included:
 Throughout development, I remained involved in deciding how features should behave, evaluating suggested approaches, checking implementations, and making adjustments based on the project's requirements. AI assistance was used to support my development process and understanding of the codebase, rather than as a substitute for understanding the implementation.
 
 
+### AI Disclosure — Analytics and Dashboards Assistance
+
+Tool: Google Gemini
+
+I used AI mainly to assist me in creating the Analytics and Dashboard Module gradually by providing me guidance and explanations of the creation process. 
+
+Description of AI Usage:
+- Understanding development flow: I used AI to help guide me thorugh the gradual development process of this module by providing me explanations on the development steps
+- Implementing features and codes: I used some of the codes sugested by AI to implement a specific feature or parts of the program, but also added personal modifications to the code so that it fulfills my needs. 
+- Solving errors: For errors that I have tried to fix it by myself, but were unable to solve it or understand it, I ask AI for the explanation of the error and ask for its guidance on how to solve it.
+
+I understand that my knowledge and understanding is still limited, therefore the usage of AI was to support me in learning the things that I have not understand yet.
+
+
 
 ### Other modules
-- **Analytics & Dashboards (Muhammad Arsyad Avmeilputra):** _to be completed_
 - **Profile (Dihya Fauzan Haryadi):** _to be completed_
 - **Reward System (Kenaz Shidqi Baswara):** _to be completed_
 - **Reporting & Mapping (Goran Adriano Tamrella):** _to be completed_
@@ -155,5 +168,5 @@ Hopefully, if this ambitious project goes well, it should be ready and open to t
 *   **Profile:** CRUD on user profiles. Handles authentication-based filtering to ensure officials, citizens, and organizations see appropriate dashboards.
 *   **Task Dispatch System:** CRUD on collection tasks. Allows waste management officials to claim, update, and close pending reports.
 *   **Educational Hub:** CRUD on articles about sorting and reducing food waste, with likes, saves, and comments (HTMX). Anyone can search and filter articles by topic and browse public global food waste data by country, region, and year.
-*   **Analytics & Dashboards:** CRUD on saved datasets or tracked metrics for environmental organizations. Uses HTMX/AJAX for dynamic chart updates.
+*   **Analytics & Dashboards:** CRUD on presets (chart filters). Also provides charts to show the collection of waste reports. Allows environmental organizations to apply filters that automatically update the available charts for analysis.
 *   **Reward System:** CRUD on reward claims and discount coupons. Allows users to redeem points for local restaurant and store vouchers using AJAX for instant balance updates.
