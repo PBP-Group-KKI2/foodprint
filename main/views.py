@@ -18,6 +18,8 @@ from .models import WasteReport, Profile
 
 from django.utils.http import url_has_allowed_host_and_scheme
 from rewards.views import award_points
+from educational_hub.models import Article
+from task_dispatch.models import is_dispatcher
 
 
 def show_landing(request):
@@ -38,6 +40,10 @@ def show_landing(request):
     context = {
         "last_login": last_login,
         "chart_data": chart_data,
+        "report_count": WasteReport.objects.count(),
+        "resolved_count": WasteReport.objects.filter(status=WasteReport.Status.RESOLVED).count(),
+        "latest_articles": Article.objects.select_related("author")[:3],
+        "can_dispatch": is_dispatcher(request.user),
     }
     return render(request, "landing_page.html", context)
 

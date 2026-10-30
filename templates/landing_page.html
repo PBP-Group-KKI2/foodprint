@@ -22,6 +22,7 @@
     </div>
 
     <div class="hero__content">
+      <p class="hero__eyebrow">Community food waste reporting</p>
       <h1 class="hero__title">
         See Food Waste,<br>
         Help Clear It Up
@@ -32,14 +33,17 @@
           Pin food waste you find around you. Every report goes to officials
           and organizations who can act on it.
         </p>
-        <a href="{% url 'main:report_map' %}#rp-form-card" class="btn btn--light hero__cta">
-          <span>Contribute now!</span>
-          <span class="btn__icon" aria-hidden="true"></span>
-        </a>
+        <div class="hero__actions">
+          <a href="{% url 'main:report_map' %}#rp-form-card" class="btn btn--light hero__cta">
+            <span>Report food waste</span>
+            <span class="btn__icon" aria-hidden="true"></span>
+          </a>
+          <a href="{% url 'education:article_list' %}" class="btn btn--outline">Learn to sort waste</a>
+        </div>
       </div>
     </div>
 
-    <a href="#mission" class="hero__scroll">
+    <a href="#problem-statement" class="hero__scroll">
       <span class="hero__scroll-icon" aria-hidden="true"></span>
       <span>Scroll down</span>
     </a>
@@ -109,9 +113,7 @@
 
       <h2 class="mission__statement">
         Turn everyday sightings of food waste into reports
-        <span class="mission__inline-img" aria-hidden="true">
-          <img src="{% static 'images/inline-pill.jpg' %}" alt="">
-        </span>
+        <span class="mission__inline-img" aria-hidden="true"></span>
         that officials can act on,
         <span class="mission__statement--muted">
           and help citizens learn how to sort and reduce waste.
@@ -124,18 +126,18 @@
         <article class="card card--stat">
           <h3 class="card__title">Every report counts</h3>
           <div class="card__stat">
-            {# Later: replace with a real count from the database, e.g. {{ report_count }} #}
-            <span class="card__number">0</span>
-            <p class="card__caption">Waste reports filed by the community so far.</p>
+            <span class="card__number">{{ report_count }}</span>
+            <p class="card__caption">
+              Waste report{{ report_count|pluralize }} filed by the community so far,
+              <strong>{{ resolved_count }} resolved</strong> by officials.
+            </p>
           </div>
         </article>
 
         {# Card 2 — image card with text over photo #}
         <article class="card card--image">
-          <img src="{% static 'images/card-vision.jpg' %}" alt="" class="card__bg">
-          <span class="card__icon" aria-hidden="true">
-            <img src="{% static 'images/icons/eye.svg' %}" alt="">
-          </span>
+          <img src="{% static 'img/hero.jpg' %}" alt="" class="card__bg">
+          <span class="card__icon">{% include '_landing_icon.html' with name='eye' %}</span>
           <div class="card__body">
             <h3 class="card__title">Vision</h3>
             <p class="card__text">
@@ -149,18 +151,14 @@
         <article class="card card--accent">
           <div class="card__header">
             <span class="card__meta">Spot, report, resolve</span>
-            <span class="card__icon" aria-hidden="true">
-              <img src="{% static 'images/icons/leaf.svg' %}" alt="">
-            </span>
+            <span class="card__icon">{% include '_landing_icon.html' with name='leaf' %}</span>
           </div>
           <h3 class="card__title">A cleaner city, built together</h3>
-          <div class="card__footer">
-            <div class="card__avatars" aria-hidden="true">
-              <span class="card__avatar"><img src="{% static 'images/avatar-1.jpg' %}" alt=""></span>
-              <span class="card__avatar"><img src="{% static 'images/avatar-2.jpg' %}" alt=""></span>
-            </div>
-            <p class="card__caption">For citizens, officials, and organizations.</p>
-          </div>
+          <ul class="card__roles" aria-label="Who FoodPrint is for">
+            <li>Citizens</li>
+            <li>Officials</li>
+            <li>Organizations</li>
+          </ul>
         </article>
 
       </div>
@@ -211,23 +209,17 @@
 
       <ol class="steps__list">
         <li class="step">
-          <span class="step__icon" aria-hidden="true">
-            <img src="{% static 'images/icons/eye.svg' %}" alt="">
-          </span>
+          <span class="step__icon">{% include '_landing_icon.html' with name='eye' %}</span>
           <h3 class="step__title">Spot it</h3>
           <p class="step__text">Find food waste in your neighborhood, campus, or market.</p>
         </li>
         <li class="step">
-          <span class="step__icon" aria-hidden="true">
-            <img src="{% static 'images/icons/pin.svg' %}" alt="">
-          </span>
+          <span class="step__icon">{% include '_landing_icon.html' with name='pin' %}</span>
           <h3 class="step__title">Report it</h3>
-          <p class="step__text">Pin the location on the map, pick the waste category, and add a photo.</p>
+          <p class="step__text">Pin the location on the map, pick the waste type, and say how severe it is.</p>
         </li>
         <li class="step">
-          <span class="step__icon" aria-hidden="true">
-            <img src="{% static 'images/icons/truck.svg' %}" alt="">
-          </span>
+          <span class="step__icon">{% include '_landing_icon.html' with name='truck' %}</span>
           <h3 class="step__title">Officials act</h3>
           <p class="step__text">Waste officials claim the report, collect the waste, and close the task.</p>
         </li>
@@ -245,47 +237,70 @@
       <h2 class="section-title">Everything in one place</h2>
 
       <div class="features__grid">
+        {% url 'main:report_map' as map_url %}
+        {% include '_feature_card.html' with url=map_url icon='pin' audience='Everyone' title='Reporting & Mapping' text='File waste reports and see every sighting pinned on a live map.' cta='Open the map' %}
 
-        <a href="{% url 'main:report_map' %}" class="feature-card">
-          <div class="feature-card__media"><img src="{% static 'images/feature-report.jpg' %}" alt=""></div>
-          <h3 class="feature-card__title">Reporting &amp; Mapping</h3>
-          <p class="feature-card__text">File waste reports and see them pinned on a live map.</p>
-        </a>
+        {% url 'education:article_list' as learn_url %}
+        {% include '_feature_card.html' with url=learn_url icon='book' audience='Everyone' title='Educational Hub' text='Guides on telling food waste types apart, sorting, and composting, written by the community.' cta='Read the guides' %}
 
-        <a href="{% url 'education:article_list' %}" class="feature-card">
-          <div class="feature-card__media"><img src="{% static 'images/feature-learn.jpg' %}" alt=""></div>
-          <h3 class="feature-card__title">Educational Hub</h3>
-          <p class="feature-card__text">Learn how to tell food waste types apart and sort them.</p>
-        </a>
+        {% url 'dispatch:pending_reports' as dispatch_url %}
+        {% if can_dispatch %}
+          {% include '_feature_card.html' with url=dispatch_url icon='truck' audience='Officials' title='Task Dispatch' text='Claim pending reports, plan the pickup, and close tasks once the area is clean.' cta='Open pending reports' %}
+        {% else %}
+          {% include '_feature_card.html' with icon='truck' audience='Officials' title='Task Dispatch' text='Officials claim pending reports, plan the pickup, and close tasks once the area is clean.' cta='Available to official accounts' %}
+        {% endif %}
 
-        <a href="{% url 'dispatch:pending_reports' %}" class="feature-card">
-          <div class="feature-card__media"><img src="{% static 'images/feature-dispatch.jpg' %}" alt=""></div>
-          <h3 class="feature-card__title">Task Dispatch</h3>
-          <p class="feature-card__text">Officials claim, update, and close pending reports.</p>
-        </a>
+        {% url 'analytics:show_analytics' as analytics_url %}
+        {% include '_feature_card.html' with url=analytics_url icon='chart' audience='Officials & organizations' title='Analytics' text='Charts of reports by city, district, waste type, and severity, with saved filter presets.' cta='Explore the data' %}
 
-        <a href="{% url 'analytics:show_analytics' %}" class="feature-card">
-          <div class="feature-card__media"><img src="{% static 'images/feature-dashboard.jpg' %}" alt=""></div>
-          <h3 class="feature-card__title">Analytics &amp; Dashboards</h3>
-          <p class="feature-card__text">Explore waste data and trends for planning and campaigns.</p>
-        </a>
+        {% url 'main:show_reward' as reward_url %}
+        {% include '_feature_card.html' with url=reward_url icon='star' audience='Signed-in users' title='Rewards' text='Earn 5 points for every report and climb the ranks from Common to Concise.' cta='See your points' %}
 
-        <a href="{% url 'main:show_reward' %}" class="feature-card">
-          <div class="feature-card__media"><img src="{% static 'images/feature-rewards.jpg' %}" alt=""></div>
-          <h3 class="feature-card__title">Rewards</h3>
-          <p class="feature-card__text">Earn points for reports and redeem them at local restaurants.</p>
-        </a>
-
-        <a href="{% url 'main:dashboard_router' %}" class="feature-card">
-          <div class="feature-card__media"><img src="{% static 'images/feature-profile.jpg' %}" alt=""></div>
-          <h3 class="feature-card__title">Profiles</h3>
-          <p class="feature-card__text">Citizens, officials, and organizations each get their own view.</p>
-        </a>
-
+        {% url 'main:dashboard_router' as dashboard_url %}
+        {% include '_feature_card.html' with url=dashboard_url icon='user' audience='Signed-in users' title='Profiles & Dashboards' text='Citizens, officials, and organizations each get a dashboard for their role.' cta='Go to your dashboard' %}
       </div>
     </div>
   </section>
 
+
+  {# ============================================================ #}
+  {# LEARN — newest Educational Hub articles (real data)           #}
+  {# ============================================================ #}
+  <section id="learn" class="section learn-preview">
+    <div class="container">
+      <div class="learn-preview__head">
+        <div>
+          <p class="section-label">From the Educational Hub</p>
+          <h2 class="section-title">Learn before you sort</h2>
+        </div>
+        <a href="{% url 'education:article_list' %}" class="learn-preview__all">
+          Browse all articles {% include '_landing_icon.html' with name='arrow' %}
+        </a>
+      </div>
+
+      {% if latest_articles %}
+        <ul class="learn-preview__list">
+          {% for article in latest_articles %}
+            <li>
+              <a href="{{ article.get_absolute_url }}" class="learn-preview__item">
+                <span class="badge">{{ article.get_category_display }}</span>
+                <h3 class="learn-preview__title">{{ article.title }}</h3>
+                <p class="learn-preview__excerpt">{{ article.excerpt }}</p>
+                <p class="learn-preview__meta">
+                  {{ article.author.username }} · <time datetime="{{ article.created_at|date:'c' }}">{{ article.created_at|date:"j M Y" }}</time>
+                </p>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="learn-preview__empty">
+          <p>No articles yet. Share what you know about sorting or reducing food waste.</p>
+          <a href="{% url 'education:article_create' %}" class="btn btn--primary">Write the first article</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
 
   {# ============================================================ #}
   {# CTA BAND — closing call to action                             #}
