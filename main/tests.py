@@ -278,3 +278,56 @@ class NavbarActiveStateTests(TestCase):
         self.assertContains(
             res, self.active_link(reverse("main:report_map"), "Reporting &amp; Mapping"), html=True
         )
+
+
+class DashboardNavigationTests(TestCase):
+    """The Dashboard link goes through dashboard_router to each role's own page."""
+
+    def setUp(self):
+        for username, role in [("citizen", "USERS"), ("official", "OFFICIAL"), ("org", "ORGANIZATION")]:
+            user = User.objects.create_user(username, password="pass12345")
+            Profile.objects.create(user=user, role=role)
+
+    def test_navbar_dashboard_link_points_to_router(self):
+        self.client.login(username="citizen", password="pass12345")
+        res = self.client.get(reverse("main:report_map"))
+        self.assertContains(res, f'href="{reverse("main:dashboard_router")}"', count=2)  # desktop + mobile
+
+    def test_anonymous_is_sent_to_login(self):
+        res = self.client.get(reverse("main:dashboard_router"))
+        self.assertRedirects(
+            res, f'{reverse("main:login")}?next={reverse("main:dashboard_router")}',
+        )
+
+    def test_each_role_reaches_its_own_dashboard(self):
+        expected = {
+            "citizen": "main:users_dashboard",
+            "official": "main:official_dashboard",
+            "org": "main:organization_dashboard",
+        }
+        for username, url_name in expected.items():
+            with self.subTest(username=username):
+                self.client.login(username=username, password="pass12345")
+                res = self.client.get(reverse("main:dashboard_router"), follow=True)
+                self.assertRedirects(res, reverse(url_name))
+                self.assertEqual(res.status_code, 200)
+
+    def test_dashboard_link_is_active_on_dashboard(self):
+        self.client.login(username="citizen", password="pass12345")
+        res = self.client.get(reverse("main:users_dashboard"))
+        self.assertContains(
+            res,
+            f'<a href="{reverse("main:dashboard_router")}" class="navbar__link navbar__link--active" aria-current="page">Dashboard</a>',
+            html=True,
+        )
+
+    def test_analytics_page_does_not_mark_dashboard_active(self):
+        self.client.login(username="org", password="pass12345")
+        html = self.client.get(reverse("analytics:show_analytics")).content.decode()
+        self.assertEqual(html.count("navbar__link--active"), 1)
+
+    def test_landing_page_links(self):
+        self.client.login(username="citizen", password="pass12345")
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, f'<a href="{reverse("main:show_reward")}" class="navbar__link">Rewards</a>', html=True)
+        self.assertContains(res, f'<li><a href="{reverse("main:dashboard_router")}">Dashboard</a></li>', html=True)
