@@ -127,8 +127,9 @@ class ReportFilterForm(forms.Form):
 
 class ExtendedRegisterForm(UserCreationForm):
     # Menambahkan dropdown pilihan Role dari model Profile
+    # Officials can claim and close reports, so an admin assigns that role in /admin/.
     role = forms.ChoiceField(
-        choices=Profile.ROLE_CHOICES, 
+        choices=[choice for choice in Profile.ROLE_CHOICES if choice[0] != 'OFFICIAL'],
         required=True, 
         label="Register as",
         widget=forms.Select(attrs={'class': 'form-control'}) # Menyesuaikan dengan styling CSS jika ada

@@ -443,3 +443,47 @@ class UpdateProfileUsernameTests(TestCase):
         self.assertRedirects(res, reverse("main:dashboard_router"), fetch_redirect_response=False)
         self.user.refresh_from_db()
         self.assertEqual(self.user.username, "alicia")
+
+
+class RegisterRoleTests(TestCase):
+    """Officials get access to Task Dispatch, so the public sign-up form must not offer that role."""
+
+    def data(self, role):
+        return {
+            "username": "newuser",
+            "email": "new@example.com",
+            "password1": "Xq-secret-9876",
+            "password2": "Xq-secret-9876",
+            "role": role,
+        }
+
+    def test_official_role_is_not_offered(self):
+        res = self.client.get(reverse("main:register"))
+        self.assertNotContains(res, 'value="OFFICIAL"')
+
+    def test_cannot_register_as_official(self):
+        res = self.client.post(reverse("main:register"), self.data("OFFICIAL"))
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    def test_users_and_organizations_can_register(self):
+        for role in ("USERS", "ORGANIZATION"):
+            with self.subTest(role=role):
+                User.objects.filter(username="newuser").delete()
+                res = self.client.post(reverse("main:register"), self.data(role))
+                self.assertRedirects(res, reverse("main:dashboard_router"), fetch_redirect_response=False)
+                self.assertEqual(Profile.objects.get(user__username="newuser").role, role)
+                self.client.logout()
+
+    def test_admin_can_promote_a_user_to_official(self):
+        User.objects.create_superuser("admin", "admin@example.com", "pass12345")
+        user = User.objects.create_user("newuser", password="pass12345")
+        profile = Profile.objects.create(user=user, role="USERS")
+        self.client.login(username="admin", password="pass12345")
+        res = self.client.post(
+            reverse("admin:main_profile_change", args=[profile.pk]),
+            {"user": user.pk, "role": "OFFICIAL", "email": "", "points": 0, "show_rank": "on"},
+        )
+        self.assertRedirects(res, reverse("admin:main_profile_changelist"))
+        profile.refresh_from_db()
+        self.assertEqual(profile.role, "OFFICIAL")
