@@ -52,6 +52,60 @@ If you want to run this project on your own laptop, follow these steps:
 
 ---
 
+## Deployment (PWS)
+
+Set these environment variables on the server. Never commit their values.
+
+| Variable | Purpose |
+| :--- | :--- |
+| `PRODUCTION` | `True` turns off `DEBUG`, enables secure cookies, and switches to PostgreSQL |
+| `SECRET_KEY` | A new random secret (the key in `settings.py` is a public development fallback) |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SCHEMA` | PostgreSQL connection |
+
+After deploying, run `python manage.py migrate`. Static files are served by WhiteNoise.
+
+---
+
+## Running Tests
+
+```bash
+pip install -r requirements-dev.txt                  # adds coverage and selenium
+python manage.py test                                # every test, including browser tests (needs Chrome)
+python manage.py test --exclude-tag functional       # what CI runs on every push and pull request
+coverage run manage.py test educational_hub && coverage report
+```
+
+GitHub Actions (`.github/workflows/django.yml`) runs `check`, `makemigrations --check`, and the test suite on every push to `main` and every pull request.
+
+---
+
+### AI Disclosure — Educational Hub and Development Assistance
+
+**Tool:** Claude (Anthropic), including Claude Code in VS Code.
+
+During the development of Foodprint, I used AI as a supporting tool for learning, understanding programming concepts, exploring implementation approaches, and resolving technical problems. As I was still developing my understanding of Django and web development, AI assistance helped me work through unfamiliar concepts and understand how different parts of the application function together.
+
+My use of AI included:
+
+- **Learning and understanding:** Asking for explanations of Django architecture, models, views, URLs, templates, forms, authentication, permissions, and other programming concepts relevant to the project.
+- **Implementation planning and guidance:** Discussing possible ways to approach features, identifying which components and files were involved, and breaking unfamiliar implementations into smaller, more understandable steps.
+- **Code development:** Using AI suggestions and code assistance when implementing certain features, particularly when working with concepts or functionality that I was not yet familiar with. Claude Code also generated portions of the implementation, which I subsequently reviewed and evaluated against the project's requirements.
+- **Debugging and problem-solving:** Using AI to understand error messages, investigate unexpected behavior, and explore possible solutions when testing the application.
+- **Code review and refinement:** Discussing potential improvements, identifying edge cases, and reviewing alternative implementations. I made decisions about which suggestions suited the project, including modifying or reverting changes when necessary.
+
+Throughout development, I remained involved in deciding how features should behave, evaluating suggested approaches, checking implementations, and making adjustments based on the project's requirements. AI assistance was used to support my development process and understanding of the codebase, rather than as a substitute for understanding the implementation.
+
+
+
+### Other modules
+- **Analytics & Dashboards (Muhammad Arsyad Avmeilputra):** _to be completed_
+- **Profile (Dihya Fauzan Haryadi):** _to be completed_
+- **Reward System (Kenaz Shidqi Baswara):** _to be completed_
+- **Reporting & Mapping (Goran Adriano Tamrella):** _to be completed_
+- **Task Dispatch System (Sorush Baghertash):** _to be completed_
+
+---
+
 ## Project Details
 
 ### What?
@@ -81,6 +135,7 @@ Hopefully, if this ambitious project goes well, it should be ready and open to t
 
 ## Tech Stack & API Integration
 *   **Mapping & Location Services:** [OpenStreetMap](https://www.openstreetmap.org/) (Used for documenting and pinpointing waste report locations).
+*   **Global Food Waste Data:** [Our World in Data — Food waste per capita](https://ourworldindata.org/grapher/food-waste-per-capita) (FAO/UNEP, SDG 12.3.1). Fetched on the server, cached for 12 hours, and served from the last good copy if the source is down.
 
 ---
 
@@ -99,6 +154,6 @@ Hopefully, if this ambitious project goes well, it should be ready and open to t
 *   **Reporting & Mapping:** CRUD on waste reports. Integrates the OpenStreetMap API to pin waste locations. Uses AJAX to submit reports without reloading the map.
 *   **Profile:** CRUD on user profiles. Handles authentication-based filtering to ensure officials, citizens, and organizations see appropriate dashboards.
 *   **Task Dispatch System:** CRUD on collection tasks. Allows waste management officials to claim, update, and close pending reports.
-*   **Educational Hub:** CRUD on waste categorization guides. Allows logged-in users to post articles and users to filter public API/mock API data on global waste statistics.
+*   **Educational Hub:** CRUD on articles about sorting and reducing food waste, with likes, saves, and comments (HTMX). Anyone can search and filter articles by topic and browse public global food waste data by country, region, and year.
 *   **Analytics & Dashboards:** CRUD on saved datasets or tracked metrics for environmental organizations. Uses HTMX/AJAX for dynamic chart updates.
 *   **Reward System:** CRUD on reward claims and discount coupons. Allows users to redeem points for local restaurant and store vouchers using AJAX for instant balance updates.
