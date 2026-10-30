@@ -46,6 +46,11 @@
   --radius-md: 18px;
   --radius-pill: 999px;
   --nav-h: 76px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+  --dur-fast: 200ms;
+  --dur-enter: 700ms;
 }
 
 /* ---------- Reset ---------- */
@@ -382,7 +387,32 @@ button { font: inherit; cursor: pointer; }
   inset: 0;
   background: var(--ph-dark);
 }
-.hero__bg { position: absolute; inset: 0; }
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  animation: hero-settle 1.6s var(--ease-out) both;
+}
+
+/* Hero entrance: copy rises in after the photo starts settling */
+.hero__eyebrow,
+.hero__title,
+.hero__lead,
+.hero__actions { animation: rise var(--dur-enter) var(--ease-out) backwards; }
+.hero__eyebrow { animation-delay: 150ms; }
+.hero__title   { animation-delay: 250ms; }
+.hero__lead    { animation-delay: 380ms; }
+.hero__actions { animation-delay: 480ms; }
+.hero__cta .btn__icon { transition: transform var(--dur-fast) var(--ease-out); }
+.hero__cta:hover .btn__icon { transform: translateX(3px); }
+
+@keyframes hero-settle {
+  from { transform: scale(1.06); }
+  to   { transform: scale(1); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
 .hero__overlay {
   position: absolute;
   inset: 0;
@@ -704,7 +734,7 @@ button { font: inherit; cursor: pointer; }
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--bg);
-  transition: border-color .2s, transform .2s, box-shadow .2s;
+  transition: border-color var(--dur-fast), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast);
 }
 a.feature-card:hover,
 a.feature-card:focus-visible {
@@ -742,7 +772,7 @@ a.feature-card:focus-visible {
   font-weight: 600;
   color: var(--green-700);
 }
-.feature-card__cta .icon { transition: transform .2s; }
+.feature-card__cta .icon { transition: transform var(--dur-fast) var(--ease-out); }
 a.feature-card:hover .feature-card__cta .icon { transform: translateX(3px); }
 .feature-card--static .feature-card__cta { color: var(--ink-mute); }
 
@@ -801,6 +831,25 @@ a.feature-card:hover .feature-card__cta .icon { transform: translateX(3px); }
   background: var(--bg);
   color: var(--ink-soft);
 }
+
+/* =============================================================
+   SCROLL REVEALS (landing.js adds .reveal-ready and .is-visible)
+   `backwards` fill only holds the start frame during the delay, so once a
+   card has appeared its own hover transform still works.
+   ============================================================= */
+.reveal-ready [data-reveal]:not(.is-visible),
+.reveal-ready [data-reveal-group] > :not(.is-visible) { opacity: 0; }
+.reveal-ready .is-visible {
+  animation: rise var(--dur-enter) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready [data-reveal],
+  .reveal-ready [data-reveal-group] > * { opacity: 1; }
+}
+
+.step__icon { transition: background-color var(--dur-fast), color var(--dur-fast); }
+.step:hover .step__icon { background: var(--green-600); color: var(--white); }
 
 /* =============================================================
    CTA BAND

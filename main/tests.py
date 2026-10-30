@@ -554,7 +554,7 @@ class LandingPageContentTests(TestCase):
         for status in ("REPORTED", "REPORTED", "RESOLVED"):
             WasteReport.objects.create(reporter=self.user, title="Rice", latitude=0, longitude=0, status=status)
         res = self.client.get(reverse("main:landing"))
-        self.assertContains(res, '<span class="card__number">3</span>', html=True)
+        self.assertContains(res, '<span class="card__number" data-count-to="3">3</span>', html=True)
         self.assertContains(res, "1 resolved")
 
     def test_latest_articles_are_listed(self):
@@ -592,3 +592,25 @@ class LandingPageContentTests(TestCase):
             if not path.startswith("/static/"):
                 with self.subTest(path=path):
                     resolve(path)
+
+
+class LandingMotionTests(TestCase):
+    """Animations are progressive: the served HTML never starts hidden."""
+
+    def test_content_is_visible_without_javascript(self):
+        html = self.client.get(reverse("main:landing")).content.decode()
+        self.assertIn("data-reveal-group", html)
+        # reveal-ready (the class that hides content until it scrolls in) is only added by landing.js
+        self.assertNotIn("reveal-ready", html)
+        self.assertNotIn("opacity: 0", html)
+
+    def test_count_up_starts_from_the_real_number(self):
+        user = User.objects.create_user("alice", password="pass12345")
+        WasteReport.objects.create(reporter=user, title="Rice", latitude=0, longitude=0)
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, '<span class="card__number" data-count-to="1">1</span>', html=True)
+
+    def test_landing_script_is_loaded(self):
+        res = self.client.get(reverse("main:landing"))
+        self.assertContains(res, "js/landing.js")
+        self.assertContains(res, 'id="landing-chart-data"')

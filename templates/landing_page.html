@@ -55,7 +55,7 @@
 
   <section id="problem-statement" class="section problem-statement">
     <div class="container problem-content">
-      <div class="problem-texts">
+      <div class="problem-texts" data-reveal>
         <p class="section-label">Problem</p>
         <h2 class="section-title">What does the world face?</h2>
         <p class="problem-paragraph">While headlines often focus on plastic pollution, the data reveals a much larger 
@@ -66,42 +66,13 @@
           local services. We don't just have a trash problem; we have a food problem, and changing 
           how we handle organic waste is the most impactful step we can take.</p>
       </div>
-        <div class="chart-container">
-            <canvas id="wasteChart"></canvas>
-        </div>
+      <div class="chart-container" data-reveal>
+        <canvas id="wasteChart" aria-label="Share of municipal waste by type" role="img"></canvas>
+      </div>
     </div>
   </section>
 
-  {{ chart_data|json_script:"my-chart-data" }}
-
-  <script>
-    const rawData = JSON.parse(document.getElementById('my-chart-data').textContent);
-    
-    const ctx = document.getElementById('wasteChart').getContext('2d')
-    const wasteChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: rawData.labels,
-        datasets: [{
-          label: '% of Global Food Waste',
-          data: rawData.values,
-          backgroundColor: rawData.colors,
-          borderWidth: 2,
-          borderColor: '#ffffff'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-          }
-        },
-        cutout: '65%'
-      }
-    })
-
-  </script>
+  {{ chart_data|json_script:"landing-chart-data" }}
 
   {# ============================================================ #}
   {# MISSION — centered statement + three feature cards           #}
@@ -111,7 +82,7 @@
 
       <p class="section-label">Our mission</p>
 
-      <h2 class="mission__statement">
+      <h2 class="mission__statement" data-reveal>
         Turn everyday sightings of food waste into reports
         <span class="mission__inline-img" aria-hidden="true"></span>
         that officials can act on,
@@ -120,13 +91,13 @@
         </span>
       </h2>
 
-      <div class="mission__cards">
+      <div class="mission__cards" data-reveal-group>
 
         {# Card 1 — stat card (light background) #}
         <article class="card card--stat">
           <h3 class="card__title">Every report counts</h3>
           <div class="card__stat">
-            <span class="card__number">{{ report_count }}</span>
+            <span class="card__number" data-count-to="{{ report_count }}">{{ report_count }}</span>
             <p class="card__caption">
               Waste report{{ report_count|pluralize }} filed by the community so far,
               <strong>{{ resolved_count }} resolved</strong> by officials.
@@ -172,7 +143,7 @@
   <section id="about" class="section about">
     <div class="container about__grid">
 
-      <div class="about__left">
+      <div class="about__left" data-reveal>
         <p class="section-label">About</p>
         <ul class="tag-list">
           <li class="tag">Waste reporting</li>
@@ -184,7 +155,7 @@
         </ul>
       </div>
 
-      <div class="about__right">
+      <div class="about__right" data-reveal>
         <h2 class="section-title">Rooted in the Community</h2>
         <p class="about__text">
           FoodPrint is a food waste reporting system and data provider. Citizens
@@ -205,9 +176,9 @@
   <section id="how-it-works" class="section steps">
     <div class="container">
       <p class="section-label">How it works</p>
-      <h2 class="section-title">From sighting to cleanup</h2>
+      <h2 class="section-title" data-reveal>From sighting to cleanup</h2>
 
-      <ol class="steps__list">
+      <ol class="steps__list" data-reveal-group>
         <li class="step">
           <span class="step__icon">{% include '_landing_icon.html' with name='eye' %}</span>
           <h3 class="step__title">Spot it</h3>
@@ -234,9 +205,9 @@
   <section id="features" class="section features">
     <div class="container">
       <p class="section-label">Features</p>
-      <h2 class="section-title">Everything in one place</h2>
+      <h2 class="section-title" data-reveal>Everything in one place</h2>
 
-      <div class="features__grid">
+      <div class="features__grid" data-reveal-group>
         {% url 'main:report_map' as map_url %}
         {% include '_feature_card.html' with url=map_url icon='pin' audience='Everyone' title='Reporting & Mapping' text='File waste reports and see every sighting pinned on a live map.' cta='Open the map' %}
 
@@ -268,7 +239,7 @@
   {# ============================================================ #}
   <section id="learn" class="section learn-preview">
     <div class="container">
-      <div class="learn-preview__head">
+      <div class="learn-preview__head" data-reveal>
         <div>
           <p class="section-label">From the Educational Hub</p>
           <h2 class="section-title">Learn before you sort</h2>
@@ -279,7 +250,7 @@
       </div>
 
       {% if latest_articles %}
-        <ul class="learn-preview__list">
+        <ul class="learn-preview__list" data-reveal-group>
           {% for article in latest_articles %}
             <li>
               <a href="{{ article.get_absolute_url }}" class="learn-preview__item">
@@ -306,10 +277,14 @@
   {# CTA BAND — closing call to action                             #}
   {# ============================================================ #}
   <section class="cta-band">
-    <div class="container cta-band__inner">
+    <div class="container cta-band__inner" data-reveal>
       <h2 class="cta-band__title">Seen food waste today?</h2>
       <p class="cta-band__text">It takes less than a minute to report it.</p>
       <a href="{% url 'main:report_map' %}#rp-form-card" class="btn btn--light">Report waste</a>
     </div>
   </section>
 {% endblock content %}
+
+{% block extra_js %}
+  <script src="{% static 'js/landing.js' %}" defer></script>
+{% endblock extra_js %}
