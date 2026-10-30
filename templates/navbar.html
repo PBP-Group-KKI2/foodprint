@@ -30,7 +30,7 @@
         {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
         <li><a href="{% url 'education:article_list' %}" class="navbar__link{% if ns == 'education' %} navbar__link--active{% endif %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
         <li><a href="{% url 'main:show_reward' %}" class="navbar__link{% if view_name == 'main:show_reward' %} navbar__link--active{% endif %}"{% if view_name == 'main:show_reward' %} aria-current="page"{% endif %}>Rewards</a></li>
-        <li><a href="{% url 'main:dashboard_router' %}" class="navbar__link{% if 'dashboard' in view_name %} navbar__link--active{% endif %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
+        <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link{% if 'dashboard' in view_name %} navbar__link--active{% endif %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
       </ul>
     </nav>
 
@@ -68,7 +68,7 @@
       {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
       <li><a href="{% url 'education:article_list' %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
       <li><a href="{% url 'main:show_reward' %}"{% if view_name == 'main:show_reward' %} aria-current="page"{% endif %}>Rewards</a></li>
-      <li><a href="{% url 'main:dashboard_router' %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
+      <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}"{% if 'dashboard' in view_name %} aria-current="page"{% endif %}>Dashboard</a></li>
       {% if user.is_authenticated %}
         <li><a href="{% url 'main:logout' %}">Log out</a></li>
       {% else %}

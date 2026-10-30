@@ -26,7 +26,8 @@
     {% if task.closed_at %}<div><dt>Closed</dt><dd>{{ task.closed_at|date:"j M Y, H:i" }}</dd></div>{% endif %}
   </dl>
 
-  {% if task.notes %}
+  {# Internal notes are for officials only #}
+  {% if task.notes and is_dispatcher %}
     <h2 class="td-section-title">Notes</h2>
     <p class="rp-detail__description td-text">{{ task.notes|linebreaksbr }}</p>
   {% endif %}
