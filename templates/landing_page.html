@@ -39,7 +39,7 @@
           <li><a href="{% url 'main:landing' %}" class="navbar__link navbar__link--active">Home</a></li>
           <li><a href="{% url 'main:report_map' %}" class="navbar__link">Reporting &amp; Mapping</a></li>
           {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}" class="navbar__link">Tasks</a></li>{% endif %}
-          <li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link">Analytics</a></li>
+          {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link">Analytics</a></li>{% endif %}
           <li><a href="{% url 'education:article_list' %}" class="navbar__link">Learn</a></li>
           <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Rewards</a></li>
           <li><a href="{% if user.is_authenticated %}{% url 'main:dashboard_router' %}{% else %}{% url 'main:login' %}{% endif %}" class="navbar__link">Dashboard</a></li>
@@ -81,7 +81,7 @@
         <li><a href="{% url 'main:landing' %}">Home</a></li>
         <li><a href="{% url 'main:report_map' %}">Reporting &amp; Mapping</a></li>
         {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}">Tasks</a></li>{% endif %}
-        <li><a href="{% url 'analytics:show_analytics' %}">Analytics</a></li>
+        {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}">Analytics</a></li>{% endif %}
         <li><a href="{% url 'education:article_list' %}">Learn</a></li>
         <li><a href="{% url 'main:show_reward' %}">Rewards</a></li>
         <li><a href="#">Dashboard</a></li>
