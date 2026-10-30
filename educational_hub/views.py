@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.cache import cache
-from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Exists, OuterRef, Q
@@ -15,11 +14,16 @@ from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_GET, require_POST
 
 from . import food_waste_data
+from .decorators import article_manager_required, rate_limit
 from .forms import ArticleFilterForm, ArticleForm, CommentForm, FoodWasteFilterForm
 from .models import Article, Comment, Favorite, Like
 
 ARTICLES_PER_PAGE = 9
 COMMENT_COOLDOWN_SECONDS = 10
+# (requests, seconds) allowed per user for each sensitive action
+ARTICLE_RATE_LIMIT = (5, 10 * 60)
+LIKE_RATE_LIMIT = (30, 60)
+COMMENT_RATE_LIMIT = (20, 10 * 60)
 DUPLICATE_COMMENT_WINDOW = timedelta(seconds=60)
 
 
@@ -48,14 +52,6 @@ def _articles_for(user):
             is_favorited=Exists(Favorite.objects.filter(article=OuterRef("pk"), user=user)),
         )
     return articles
-
-
-def _get_manageable_article(request, pk):
-    """Author or staff only. Anyone else gets a 403, even by typing the URL directly."""
-    article = get_object_or_404(Article, pk=pk)
-    if not article.can_be_managed_by(request.user):
-        raise PermissionDenied("You can only change your own articles.")
-    return article
 
 
 def _login_required_response(request, next_url):
@@ -156,6 +152,7 @@ def _save_article_form(request, form, success_message):
 
 
 @login_required
+@rate_limit("article", *ARTICLE_RATE_LIMIT)
 def article_create(request):
     form = ArticleForm(request.POST or None, author=request.user)
 
@@ -167,9 +164,8 @@ def article_create(request):
     return render(request, "educational_hub/article_form.html", {"form": form})
 
 
-@login_required
-def article_update(request, pk):
-    article = _get_manageable_article(request, pk)
+@article_manager_required
+def article_update(request, article):
     form = ArticleForm(request.POST or None, instance=article)
 
     if request.method == "POST" and form.is_valid():
@@ -180,10 +176,9 @@ def article_update(request, pk):
     return render(request, "educational_hub/article_form.html", {"form": form, "article": article})
 
 
-@login_required
-def article_delete(request, pk):
+@article_manager_required
+def article_delete(request, article):
     """GET shows a confirmation page; only a POST actually deletes."""
-    article = _get_manageable_article(request, pk)
 
     if request.method == "POST":
         article.delete()  # comments, likes, and favorites are removed by CASCADE
@@ -215,16 +210,19 @@ def _toggle_reaction(request, pk, model):
 
 
 @require_POST
+@rate_limit("reaction", *LIKE_RATE_LIMIT)
 def toggle_like(request, pk):
     return _toggle_reaction(request, pk, Like)
 
 
 @require_POST
+@rate_limit("reaction", *LIKE_RATE_LIMIT)
 def toggle_favorite(request, pk):
     return _toggle_reaction(request, pk, Favorite)
 
 
 @require_POST
+@rate_limit("comment", *COMMENT_RATE_LIMIT)
 def comment_create(request, pk):
     article = get_object_or_404(Article, pk=pk)
     if not request.user.is_authenticated:

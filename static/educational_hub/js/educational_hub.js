@@ -19,6 +19,7 @@
     if (status === 401) return "Please log in to do that.";
     if (status === 403) return "You don't have permission to do that.";
     if (status === 404) return "That article no longer exists.";
+    if (status === 429) return "You're doing that too many times. Please wait a moment and try again.";
     return "Something went wrong. Please try again.";
   }
 

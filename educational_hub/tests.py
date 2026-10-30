@@ -10,6 +10,7 @@ from django.urls import reverse
 from main.models import Profile
 
 from .food_waste_data import FRESH_KEY, get_food_waste_data
+from .views import ARTICLE_RATE_LIMIT, LIKE_RATE_LIMIT
 from .models import Article, Comment, Favorite, Like
 
 HTMX = {"HTTP_HX_REQUEST": "true"}
@@ -419,3 +420,68 @@ class FoodWasteDataTests(TestCase):
         self.assertTemplateUsed(res, "educational_hub/_food_waste_results.html")
         self.assertTemplateNotUsed(res, "educational_hub/food_waste_data.html")
         self.assertIn("HX-Request", res["Vary"])
+
+
+# ---------- security decorators ----------
+
+class SecurityDecoratorTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.alice = User.objects.create_user("alice", password="pass12345")
+        self.bob = User.objects.create_user("bob", password="pass12345")
+        self.staff = User.objects.create_user("staff", password="pass12345", is_staff=True)
+        self.article = Article.objects.create(author=self.alice, title="Composting basics", content=LONG_TEXT)
+        self.edit_url = reverse("education:article_update", args=[self.article.pk])
+        self.delete_url = reverse("education:article_delete", args=[self.article.pk])
+        self.like_url = reverse("education:toggle_like", args=[self.article.pk])
+
+    def test_manager_required_allows_owner_and_staff_only(self):
+        for user, expected in ((self.alice, 200), (self.staff, 200), (self.bob, 403)):
+            with self.subTest(user=user.username):
+                self.client.force_login(user)
+                self.assertEqual(self.client.get(self.edit_url).status_code, expected)
+                self.assertEqual(self.client.get(self.delete_url).status_code, expected)
+
+    def test_manager_required_redirects_anonymous_and_404s_missing_articles(self):
+        self.assertRedirects(self.client.get(self.edit_url), f"{reverse('main:login')}?next={self.edit_url}")
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.get(reverse("education:article_update", args=[9999])).status_code, 404)
+
+    def test_likes_are_rate_limited_per_user(self):
+        limit, _ = LIKE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for _ in range(limit):
+            self.assertEqual(self.client.post(self.like_url, **HTMX).status_code, 200)
+        res = self.client.post(self.like_url, **HTMX)
+        self.assertEqual(res.status_code, 429)
+        self.assertIn("too many", res.content.decode().lower())
+
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.post(self.like_url, **HTMX).status_code, 200)
+
+    def test_article_creation_is_rate_limited_without_htmx(self):
+        limit, _ = ARTICLE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for i in range(limit):
+            self.client.post(reverse("education:article_create"), {
+                "title": f"Sorting guide number {i}", "category": "SORTING", "summary": "", "content": LONG_TEXT,
+            })
+        res = self.client.post(reverse("education:article_create"), {
+            "title": "One article too many", "category": "SORTING", "summary": "", "content": LONG_TEXT,
+        }, follow=True)
+        self.assertFalse(Article.objects.filter(title="One article too many").exists())
+        self.assertContains(res, "too many")
+
+    def test_get_requests_are_not_limited(self):
+        limit, _ = ARTICLE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for _ in range(limit + 3):
+            self.assertEqual(self.client.get(reverse("education:article_create")).status_code, 200)
+
+    def test_rate_limit_redirect_ignores_external_referer(self):
+        limit, _ = LIKE_RATE_LIMIT
+        self.client.force_login(self.bob)
+        for _ in range(limit):
+            self.client.post(self.like_url)
+        res = self.client.post(self.like_url, HTTP_REFERER="https://evil.example/")
+        self.assertRedirects(res, reverse("education:article_list"), fetch_redirect_response=False)
