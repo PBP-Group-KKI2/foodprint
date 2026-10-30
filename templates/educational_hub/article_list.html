@@ -22,7 +22,6 @@
       </div>
 
       <div class="educational-hub__intro-actions">
-        <a href="{% url 'education:food_waste_data' %}" class="btn educational-hub__btn-secondary">Global waste data</a>
         {% if user.is_authenticated %}
           <a href="{% url 'education:article_create' %}" class="btn btn--primary">Write an article</a>
         {% else %}
@@ -31,11 +30,10 @@
       </div>
     </div>
 
-    {% if user.is_authenticated %}
-      <nav class="educational-hub__tabs" aria-label="Article lists">
-        <a href="{% url 'education:article_list' %}" class="educational-hub__tab{% if not is_saved_view %} educational-hub__tab--active{% endif %}"{% if not is_saved_view %} aria-current="page"{% endif %}>All articles</a>
-        <a href="{% url 'education:saved_articles' %}" class="educational-hub__tab{% if is_saved_view %} educational-hub__tab--active{% endif %}"{% if is_saved_view %} aria-current="page"{% endif %}>Saved</a>
-      </nav>
+    {% if is_saved_view %}
+      {% include 'educational_hub/_hub_tabs.html' with active='saved' %}
+    {% else %}
+      {% include 'educational_hub/_hub_tabs.html' with active='articles' %}
     {% endif %}
 
     {# Works as a normal GET form; with HTMX it updates the results as you type (debounced 400 ms). #}

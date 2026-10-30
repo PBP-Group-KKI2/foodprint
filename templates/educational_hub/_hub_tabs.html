@@ -1,0 +1,8 @@
+{# Hub section tabs, shared by every Hub list page. Pass active = "articles", "saved" or "data". #}
+<nav class="educational-hub__tabs" aria-label="Educational Hub sections">
+  <a href="{% url 'education:article_list' %}" class="educational-hub__tab{% if active == 'articles' %} educational-hub__tab--active{% endif %}"{% if active == 'articles' %} aria-current="page"{% endif %}>Articles</a>
+  {% if user.is_authenticated %}
+    <a href="{% url 'education:saved_articles' %}" class="educational-hub__tab{% if active == 'saved' %} educational-hub__tab--active{% endif %}"{% if active == 'saved' %} aria-current="page"{% endif %}>Saved</a>
+  {% endif %}
+  <a href="{% url 'education:food_waste_data' %}" class="educational-hub__tab{% if active == 'data' %} educational-hub__tab--active{% endif %}"{% if active == 'data' %} aria-current="page"{% endif %}>Global data</a>
+</nav>

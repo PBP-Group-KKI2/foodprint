@@ -13,10 +13,7 @@
       Figures come from the UN Environment Programme's Food Waste Index (SDG 12.3.1), published by Our World in Data.
     </p>
 
-    <nav class="educational-hub__tabs" aria-label="Educational Hub sections">
-      <a href="{% url 'education:article_list' %}" class="educational-hub__tab">Articles</a>
-      <a href="{% url 'education:food_waste_data' %}" class="educational-hub__tab educational-hub__tab--active" aria-current="page">Global data</a>
-    </nav>
+    {% include 'educational_hub/_hub_tabs.html' with active='data' %}
 
     <form class="educational-hub__filters educational-hub__data-filters"
           method="get"

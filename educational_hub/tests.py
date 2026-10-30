@@ -548,3 +548,31 @@ class EdgeCaseTests(TestCase):
         self.assertEqual(str(comment), "alice on Composting basics")
         self.assertEqual(str(like), "alice likes Composting basics")
         self.assertEqual(str(favorite), "alice saved Composting basics")
+
+
+class HubTabsTests(TestCase):
+    """Every Hub list page shares the same section tabs."""
+
+    def active_tab(self, label, url_name):
+        return f'<a href="{reverse(url_name)}" class="educational-hub__tab educational-hub__tab--active" aria-current="page">{label}</a>'
+
+    def test_tabs_mark_the_current_section(self):
+        user = User.objects.create_user("alice", password="pass12345")
+        self.client.force_login(user)
+        with mock.patch("educational_hub.food_waste_data.urlopen", return_value=FakeResponse(SAMPLE_CSV)):
+            pages = [
+                ("education:article_list", "Articles"),
+                ("education:saved_articles", "Saved"),
+                ("education:food_waste_data", "Global data"),
+            ]
+            for url_name, label in pages:
+                with self.subTest(page=url_name):
+                    res = self.client.get(reverse(url_name))
+                    self.assertContains(res, self.active_tab(label, url_name), html=True)
+                    self.assertContains(res, 'class="educational-hub__tab"', count=2)
+
+    def test_saved_tab_is_only_for_logged_in_users(self):
+        res = self.client.get(reverse("education:article_list"))
+        self.assertNotContains(res, reverse("education:saved_articles"))
+        self.assertContains(res, f'href="{reverse("education:food_waste_data")}" class="educational-hub__tab"')
+        self.assertContains(res, "Log in to write")
