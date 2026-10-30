@@ -236,7 +236,8 @@ def report_delete(request, pk):
 
 @login_required
 def organization_dashboard(request):
-    if request.user.profile.role != 'ORGANIZATION':
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if profile.role != 'ORGANIZATION':
         return HttpResponseForbidden("Access denied.")
     context = {'title': 'Organization Portal'}
     return render(request, 'dashboards/organization.html', context)
@@ -263,7 +264,8 @@ def dashboard_router(request):
 
 @login_required
 def official_dashboard(request):
-    if request.user.profile.role != 'OFFICIAL':
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if profile.role != 'OFFICIAL':
         return HttpResponseForbidden("You don't have access to this page.")
     
     # special data logic for official user
@@ -272,10 +274,9 @@ def official_dashboard(request):
 
 @login_required
 def users_dashboard(request):
-    if request.user.profile.role != 'USERS':
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if profile.role != 'USERS':
         return HttpResponseForbidden("Access denied.")
-    
-    profile = request.user.profile
     
     context = {
         'title': 'Users Portal',
@@ -362,14 +363,14 @@ def register_view(request):
 
 @login_required
 def show_reward(request):
-    profile = get_object_or_404(Profile, user=request.user)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
     return render(request, "reward.html", {"profile": profile})
 
 
 @login_required
 @require_POST
 def toggle_rank(request):
-    profile = get_object_or_404(Profile, user=request.user)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
     profile.show_rank = not profile.show_rank
     profile.save(update_fields=["show_rank"])
 

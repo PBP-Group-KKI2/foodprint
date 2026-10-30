@@ -366,3 +366,36 @@ class PlaceholderLinkTests(TestCase):
         for url_name in ("main:report_map", "main:show_reward", "main:dashboard_router"):
             self.assertContains(res, f'<a href="{reverse(url_name)}" class="feature-card">')
         self.assertNotContains(res, "Coming soon")
+
+
+class MissingProfileTests(TestCase):
+    """Accounts made with createsuperuser have no Profile and must not crash pages."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", "admin@example.com", "pass12345")
+        self.client.login(username="admin", password="pass12345")
+
+    def test_rewards_page_works_without_profile(self):
+        res = self.client.get(reverse("main:show_reward"))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Points: <strong>0</strong>", html=True)
+
+    def test_toggle_rank_works_without_profile(self):
+        res = self.client.post(reverse("main:toggle_rank"), {"next": reverse("main:landing")})
+        self.assertRedirects(res, reverse("main:landing"))
+        self.assertFalse(Profile.objects.get(user=self.admin).show_rank)
+
+    def test_role_dashboards_deny_instead_of_crashing(self):
+        for url_name in ("main:official_dashboard", "main:organization_dashboard"):
+            with self.subTest(url_name=url_name):
+                self.assertEqual(self.client.get(reverse(url_name)).status_code, 403)
+
+    def test_dashboard_router_still_reaches_a_dashboard(self):
+        res = self.client.get(reverse("main:dashboard_router"), follow=True)
+        self.assertRedirects(res, reverse("main:users_dashboard"))
+
+    def test_wrong_role_is_still_forbidden(self):
+        citizen = User.objects.create_user("citizen", password="pass12345")
+        Profile.objects.create(user=citizen, role="USERS")
+        self.client.login(username="citizen", password="pass12345")
+        self.assertEqual(self.client.get(reverse("main:official_dashboard")).status_code, 403)
