@@ -25,7 +25,7 @@
         <li><a href="{% url 'main:landing' %}" class="navbar__link{% if view_name == 'main:landing' %} navbar__link--active{% endif %}"{% if view_name == 'main:landing' %} aria-current="page"{% endif %}>Home</a></li>
         <li><a href="{% url 'main:report_map' %}" class="navbar__link{% if view_name == 'main:report_map' %} navbar__link--active{% endif %}"{% if view_name == 'main:report_map' %} aria-current="page"{% endif %}>Reporting &amp; Mapping</a></li>
         {% if user.is_staff or user.profile.role == 'OFFICIAL' %}<li><a href="{% url 'dispatch:pending_reports' %}" class="navbar__link{% if ns == 'dispatch' %} navbar__link--active{% endif %}"{% if ns == 'dispatch' %} aria-current="page"{% endif %}>Tasks</a></li>{% endif %}
-        <li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>
+        {% if user.profile.role == 'OFFICIAL' or user.profile.role == 'ORGANIZATION' %}<li><a href="{% url 'analytics:show_analytics' %}" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Analytics</a></li>{% endif %}
         <li><a href="{% url 'education:article_list' %}" class="navbar__link{% if ns == 'education' %} navbar__link--active{% endif %}"{% if ns == 'education' %} aria-current="page"{% endif %}>Learn</a></li>
         <li><a href="{% url 'main:show_reward' %}" class="navbar__link{% if ns == 'rewards' %} navbar__link--active{% endif %}"{% if ns == 'rewards' %} aria-current="page"{% endif %}>Rewards</a></li>
         <li><a href="#" class="navbar__link{% if ns == 'analytics' %} navbar__link--active{% endif %}"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Dashboard</a></li>
@@ -34,6 +34,7 @@
 
     <div class="navbar__actions">
       {% if user.is_authenticated %}
+        <a href="{% url 'main:logout' %}" class="btn btn--outline navbar__cta">Log out</a>
         <a href="{% url 'main:update_profile' %}" class="navbar__profile" title="Edit Profil ({{ user.username }})">{{ user.username|slice:":1"|upper }}</a>
         {% if user.profile.show_rank %}
           <span class="rank-tag rank-tag--{{ user.profile.rank|lower }}">{{ user.profile.rank_label }}</span>
@@ -67,6 +68,7 @@
       <li><a href="{% url 'main:show_reward' %}"{% if ns == 'rewards' %} aria-current="page"{% endif %}>Rewards</a></li>
       <li><a href="#"{% if ns == 'analytics' %} aria-current="page"{% endif %}>Dashboard</a></li>
       {% if user.is_authenticated %}
+        <li><a href="{% url 'main:logout' %}">Log out</a></li>
       {% else %}
         <li><a href="{% url 'main:login' %}">Log in</a></li>
       {% endif %}
