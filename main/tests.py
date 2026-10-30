@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import WasteReport
+from .models import Profile, WasteReport
 
 AJAX = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
 
@@ -249,3 +249,32 @@ class ReportAdminPermissionTests(TestCase):
         self.assertContains(detail, self.edit_url)
         html = self.client.get(reverse("main:report_list_json")).json()["html"]
         self.assertIn("data-delete-url", html)
+
+class NavbarActiveStateTests(TestCase):
+    """The navbar highlights the section the current page belongs to."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS")
+        self.client.login(username="alice", password="pass12345")
+
+    def active_link(self, url, label):
+        return f'<a href="{url}" class="navbar__link navbar__link--active" aria-current="page">{label}</a>'
+
+    def test_rewards_link_is_active_on_rewards_page(self):
+        res = self.client.get(reverse("main:show_reward"))
+        self.assertContains(res, self.active_link(reverse("main:show_reward"), "Rewards"), html=True)
+
+    def test_only_one_item_is_active(self):
+        res = self.client.get(reverse("main:show_reward"))
+        html = res.content.decode()
+        self.assertEqual(html.count("navbar__link--active"), 1)
+        # one aria-current in the desktop nav, one in the mobile menu
+        self.assertEqual(html.count('aria-current="page"'), 2)
+
+    def test_report_detail_keeps_reporting_active(self):
+        report = WasteReport.objects.create(reporter=self.user, title="Rice", latitude=0, longitude=0)
+        res = self.client.get(reverse("main:report_detail", args=[report.pk]))
+        self.assertContains(
+            res, self.active_link(reverse("main:report_map"), "Reporting &amp; Mapping"), html=True
+        )
