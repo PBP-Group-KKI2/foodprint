@@ -40,23 +40,20 @@
                     </a>
                 </div>
             </div>
+
+            <div class="dashboard-card">
+                <h3>Collection Tasks</h3>
+                <p>Claim pending reports, plan the pickup, and close them once the area has been cleaned.</p>
+                <div class="dashboard-actions" style="margin-top: 24px;">
+                    <a href="{% url 'dispatch:pending_reports' %}" class="dashboard-btn dashboard-btn--primary">
+                        Pending Reports
+                    </a>
+                    <a href="{% url 'dispatch:my_tasks' %}" class="dashboard-btn dashboard-btn--outline">
+                        My Tasks
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block content %}
-<section class="dashboard-section">
-    <div class="container">
-        <h1>Welcome Official</h1>
-        <p>Halo, <strong>{{ request.user.username }}</strong>!</p>
-        <p>Your email: {{ request.user.profile.email }}</p>
-        <p>You're logged in as (Role): Official/Government</p>
-
-        <hr>
-        <!-- Task Dispatch -->
-        <p><a href="{% url 'dispatch:pending_reports' %}">Pending reports</a> · <a href="{% url 'dispatch:my_tasks' %}">My tasks</a></p>
-        <p><a href="{% url 'main:update_profile' %}">Edit My Profile</a></p>
-    </div>
-</section>
 {% endblock %}
