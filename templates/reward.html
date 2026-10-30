@@ -8,11 +8,11 @@
     <p>Rank: <span class="rank-tag rank-tag--{{ profile.rank|lower }}">{{ profile.rank_label }}</span></p>
     {% if profile.rank == 'COMMON' %}
       <p>Every report or Educational Hub post earns 5 points. Reach 100 points to become "Civic".</p>
-    {% elif profile.rank == 'COMMON' %}
+    {% elif profile.rank == 'CIVIC' %}
       <p>Every report or Educational Hub post earns 5 points. Reach 300 points to become "Critical".</p>
-    {% elif profile.rank == 'COMMON' %}
+    {% elif profile.rank == 'CRITICAL' %}
       <p>Every report or Educational Hub post earns 5 points. Reach 1000 points to become "Concise".</p>
-    {% elif profile.rank == 'COMMON' %}
+    {% elif profile.rank == 'CONCISE' %}
       <p>Every report or Educational Hub post earns 5 points. You are already on maximum level.</p>
     {% endif %}
     <div class="progress">

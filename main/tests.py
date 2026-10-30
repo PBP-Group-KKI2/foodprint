@@ -399,3 +399,25 @@ class MissingProfileTests(TestCase):
         Profile.objects.create(user=citizen, role="USERS")
         self.client.login(username="citizen", password="pass12345")
         self.assertEqual(self.client.get(reverse("main:official_dashboard")).status_code, 403)
+
+
+class RewardRankHintTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        self.profile = Profile.objects.create(user=self.user, role="USERS")
+        self.client.login(username="alice", password="pass12345")
+
+    def test_hint_matches_each_rank(self):
+        cases = [
+            (0, 'Reach 100 points to become "Civic"', "0/100"),
+            (150, 'Reach 300 points to become "Critical"', "150/300"),
+            (500, 'Reach 1000 points to become "Concise"', "500/1000"),
+            (1200, "You are already on maximum level", "1200"),
+        ]
+        for points, hint, progress in cases:
+            with self.subTest(points=points):
+                self.profile.points = points
+                self.profile.save()
+                res = self.client.get(reverse("main:show_reward"))
+                self.assertContains(res, hint)
+                self.assertContains(res, f'<span class="progress__text">{progress}</span>', html=True)
