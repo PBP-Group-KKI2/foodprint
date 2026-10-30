@@ -421,3 +421,25 @@ class RewardRankHintTests(TestCase):
                 res = self.client.get(reverse("main:show_reward"))
                 self.assertContains(res, hint)
                 self.assertContains(res, f'<span class="progress__text">{progress}</span>', html=True)
+
+
+class UpdateProfileUsernameTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pass12345")
+        Profile.objects.create(user=self.user, role="USERS", email="alice@example.com")
+        User.objects.create_user("bob", password="pass12345")
+        self.client.login(username="alice", password="pass12345")
+        self.url = reverse("main:update_profile")
+
+    def test_taken_username_shows_error_instead_of_crashing(self):
+        res = self.client.post(self.url, {"username": "bob", "email": "alice@example.com"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "That username is already taken.")
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "alice")
+
+    def test_free_username_is_saved(self):
+        res = self.client.post(self.url, {"username": "alicia", "email": "alice@example.com"})
+        self.assertRedirects(res, reverse("main:dashboard_router"), fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "alicia")

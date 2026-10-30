@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseForbidden
@@ -297,6 +298,13 @@ def update_profile(request):
         if user_role == 'USERS':
             input_username = request.POST.get('username')
             if input_username:
+                if User.objects.exclude(pk=request.user.pk).filter(username=input_username).exists():
+                    messages.error(request, 'That username is already taken.')
+                    return render(request, 'profiles/update.html', {
+                        'profile': profile,
+                        'user_role': user_role,
+                        'password_form': password_form
+                    })
                 request.user.username = input_username
         
         if input_email:
